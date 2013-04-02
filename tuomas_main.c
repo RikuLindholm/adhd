@@ -116,25 +116,23 @@ int DHT_connect(int sockfd, const char *host, int port) {
 
 int DHT_handshake(int sock) {
   printf("Attempting handshake...\n");
-  int n;
   char buffer[16];
-
-  // Handshake request
   memset(buffer, 0, sizeof(buffer));
-  n = (int) read(sock, buffer, sizeof(buffer) - 1);
-  printf("Got handshake: %s\n", buffer);
-
-  if (n < 0) {
+  
+  // Handshake request
+  if (read(sock, buffer, sizeof(buffer) -1) < 0) {
     printf("Read error");
     return 1;
   }
-
+  printf("Got handshake: %s\n", buffer);
+  
   // Handshake response
   printf("Responding to handshake...\n");
   memset(buffer, 0, sizeof(buffer));
-  if (write(sock, (char *) DHT_CLIENT_SHAKE, strlen(buffer)) < 0)
+  buffer[0] = (DHT_CLIENT_SHAKE >> 8) & 0xff;
+  buffer[1] = DHT_CLIENT_SHAKE & 0xff;
+  if (write(sock, buffer, sizeof(unsigned short)) < 0)
     return 1;
-
   return 0;
 }
 
