@@ -100,9 +100,9 @@ int DHT_connect(int sockfd, const char *host, int port) {
   if (server == NULL)
     return 1;
 
-  bzero((char *) &serv_addr, sizeof(serv_addr));
-  bcopy((char *)server->h_addr,
-        (char *)&serv_addr.sin_addr.s_addr,
+  memset(&serv_addr, '\0', sizeof(serv_addr));
+  memmove(&serv_addr.sin_addr.s_addr,
+        server->h_addr_list[0],
         server->h_length);
 
   serv_addr.sin_family = AF_INET;
