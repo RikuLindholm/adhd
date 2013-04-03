@@ -1,2 +1,9 @@
+CC=gcc
+CFLAGS=-lgcrypt
+EXECUTABLE=main
+ 
 all:
-	gcc main.c -lgcrypt -o main
+	$(CC) $(CFLAGS) sha1.c main.c -o $(EXECUTABLE)
+
+clean:
+	rm -rf *.o $(EXECUTABLE)

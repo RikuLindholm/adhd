@@ -25,7 +25,7 @@ Google for instructions on Linux/Windows ;)
 
 The client can be compiled easily by running:
 
-    make -f Makefile
+    make all
 
 This compiles the code into an executable named 'main' which can be run with:
 

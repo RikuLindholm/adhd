@@ -1,12 +1,10 @@
 //
 //  main.c
-//  P2P
+//  ADHD
 //
 //  Created by Woochi on 1/4/13.
 //  Copyright (c) 2013 Woochi. All rights reserved.
 //
-
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,8 +13,9 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <gcrypt.h>
+#include "sha1.h"
 
-// TODO: Are the codes predefined somewhere?
+// TODO: The codes are defined in a .h file in the course SVN
 static const unsigned short DHT_SERVER_SHAKE =      0x413f;
 static const unsigned short DHT_CLIENT_SHAKE =      0x4121;
 static const unsigned short DHT_REGISTER_BEGIN =    0x4122;
@@ -58,11 +57,14 @@ char *serialize_packet(DHTPacket *packet) {
   memcpy(data, packet->destination, 20);
   memcpy(data + 20, packet->origin, 20);
   // The following results in big-endian regardless of the machine endianess
-  data[40] = (packet->type >> 8) & 0xff;
+	// TODO: Checkout the dhtpackettypes.h from SVN
+	/*
+	data[40] = (packet->type >> 8) & 0xff;
   data[41] = packet->type & 0xff;
   data[42] = (packet->length >> 8) & 0xff;
   data[43] = packet->length & 0xff;
   memcpy(data + 44, packet->data, packet->length);
+	*/
   return data;
 }
 
@@ -150,20 +152,6 @@ int transmit_packet(int sock, DHTPacket *packet) {
   if (ret < 0)
     return 1;
   return 0;
-}
-
-char *sha1( char *val ){
-   int msg_length = strlen( val );
-   int hash_length = gcry_md_get_algo_dlen( GCRY_MD_SHA1 );
-   unsigned char hash[ hash_length ];
-   char *out = (char *) malloc( sizeof(char) * ((hash_length*2)+1) );
-   char *p = out;
-   gcry_md_hash_buffer( GCRY_MD_SHA1, hash, val, msg_length );
-   int i;
-   for ( i = 0; i < hash_length; i++, p += 2 ) {
-      snprintf ( p, 3, "%02x", hash[i] );
-   }
-   return out;
 }
 
 int main(int argc, const char * argv[]) {
