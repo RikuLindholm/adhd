@@ -50,14 +50,6 @@ DHTPacket *create_packet(unsigned char *destination, unsigned char *origin,
   return packet;
 }
 
-/* Frees the memory associated for a given DHTPacket.*/
-void free_DHTPacket(DHTPacket **packet) {
-  free((*packet)->destination);
-  free((*packet)->origin);
-  free((*packet)->data);
-  free(*packet);
-}
-
 /* Converts the given DHTPacket-structure into a byte array.*/
 char *serialize_packet(DHTPacket *packet) {
   char *data = malloc((packet->length + 44)*sizeof(char));
@@ -78,10 +70,8 @@ DHTPacket *deserialize_packet(char *data) {
   memcpy(destination, data, 20);
   unsigned char *origin = malloc(20*sizeof(char));
   memcpy(origin, data + 20, 20);
-  unsigned short type = (unsigned short)(((data[40] & 0xff) << 8)
-                                          | (data[41] & 0xff));
-  unsigned short length = (unsigned short)(((data[42] & 0xff) << 8)
-                                          | (data[43] & 0xff));
+  unsigned short type = ((data[40] & 0xff) << 8) | (data[41] & 0xff);
+  unsigned short length = ((data[42] & 0xff) << 8) | (data[43] & 0xff);
   void *payload = malloc(length*sizeof(char));
   memcpy(payload, data + 44, length);
   return create_packet(destination, origin, type, length, payload);
@@ -116,15 +106,24 @@ int DHT_connect(int sockfd, const char *host, int port) {
 
 int DHT_handshake(int sock) {
   printf("Attempting handshake...\n");
+  int n;
   char buffer[16];
-  memset(buffer, 0, sizeof(buffer));
-  
+
   // Handshake request
-  if (read(sock, buffer, sizeof(buffer) -1) < 0) {
+  memset(buffer, 0, sizeof(buffer));
+  n = (int) read(sock, buffer, sizeof(buffer) - 1);
+  if (n < 0) {
     printf("Read error");
     return 1;
   }
-  printf("Got handshake: %s\n", buffer);
+  
+  // Check handshake
+  unsigned short s_shake = ((buffer[0] & 0xff) << 8) | (buffer[1] & 0xff);
+  printf("Got handshake: 0x%x (%s)\n", s_shake, buffer);
+  if (n != 2 || s_shake != DHT_SERVER_SHAKE){
+    printf("Invalid handshake");
+    return 1;
+  }  
   
   // Handshake response
   printf("Responding to handshake...\n");
@@ -140,11 +139,23 @@ void DHT_disconnect(int s) {
   close(s);
 }
 
-int main(int argc, const char * argv[]) {
-  int sockfd;
+int transmit_packet(int sock, DHTPacket *packet) {
+  char *data = serialize_packet(packet);
+  if (data == NULL)
+    return 1;
+  int ret = write(sock, data, 44 + packet->length);
+  free(data);
+  if (ret < 0)
+    return 1;
+  return 0;
+}
 
-  if (argc < 3) {
-    fprintf(stderr, "usage %s hostname port\n", argv[0]);
+int main(int argc, const char * argv[]) {
+  int sockfd, ret;
+  DHTPacket *packet;
+
+  if (argc < 5) {
+    fprintf(stderr, "usage %s server_hostname server_port hostname port\n", argv[0]);
     exit(0);
   }
 
@@ -170,7 +181,29 @@ int main(int argc, const char * argv[]) {
   } else {
     printf("Handshake was successful\n");
   }
-
+  
+  // Construct the tcp_address
+  // P.S remember to add -lcrypto or -lssl when compiling
+  unsigned short tcp_len = strlen(argv[3]) + 2;
+  unsigned char tcp_addr[tcp_len];
+  unsigned short port = atoi(argv[4]);
+  memcpy(tcp_addr, &port, 2);
+  memcpy(tcp_addr + 2, argv[3], strlen(argv[3]));
+  unsigned char key[20];
+  SHA1(tcp_addr, (unsigned long)tcp_len, key);
+  
+  // Perform registering
+  packet = create_packet(key, key, DHT_REGISTER_BEGIN,
+                                      tcp_len, (void *)tcp_addr);
+  ret = transmit_packet(sockfd, packet);
+  free(packet);
+  if (ret > 0) {
+    error("Register sending failed");
+    exit(1);
+  } else {
+    printf("Registering initializes\n");
+  }
+  
   // TODO: Registering client
   // Send DHT_REGISTER_BEGIN to server
   // Wait DHT_REGISTER_ACK from neighbours (x2)
