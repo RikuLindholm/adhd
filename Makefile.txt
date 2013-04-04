@@ -1,0 +1,21 @@
+CFLAGS=-c -g -Wall -Werror -std=c99 -pedantic
+LDFLAGS=
+CC = gcc
+LD = gcc
+OBJS = dhtnode.o
+PROG = dhtnode
+
+.c.o:
+  gcc $< -o $@ $(CFLAGS)
+
+all: $(PROG)
+
+$(PROG): $(OBJS)
+	$(LD) $(LDFLAGS) $(OBJS) -o $(PROG)
+
+dhtnode.o: dhtnode.c dhtpackettypes.h
+	$(CC) $(CFLAGS) dhtnode.c
+
+clean:
+	/bin/rm -f *.o dhtnode
+
