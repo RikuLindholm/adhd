@@ -4,6 +4,6 @@
 #include <stdio.h>
 #include <gcrypt.h>
 
-char *sha1(char *);
+char *sha1(char *val);
 
 #endif

@@ -1,6 +1,6 @@
 #include "sha1.h"
 
-char *sha1( char *val ){
+char *sha1(char *val){
    int msg_length = strlen(val);
    int hash_length = gcry_md_get_algo_dlen(GCRY_MD_SHA1);
    unsigned char hash[hash_length];
