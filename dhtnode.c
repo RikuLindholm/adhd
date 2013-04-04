@@ -134,7 +134,7 @@ int main(int argc, const char * argv[]) {
   unsigned char *key = (unsigned char *) sha1(tcp_addr);
   
   // Perform registering
-  packet = create_packet(key, key, (unsigned short) DHT_SERVER_SHAKE, tcp_len, (void *)tcp_addr);
+  packet = create_packet(key, key, DHT_REGISTER_BEGIN, tcp_len, (void *)tcp_addr);
   ret = transmit_packet(sockfd, packet);
   free(packet);
   if (ret > 0) {
