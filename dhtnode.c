@@ -8,7 +8,6 @@
 
 #include "dhtpackettypes.h"
 #include "dhtpacket.h"
-#include "sha1.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +16,19 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/select.h>
+
+// Include CommonCrypto or OpenSSL based on operating system
+#ifdef __APPLE__ && __MACH__
+  #include <CommonCrypto/CommonDigest.h>
+  void sha1(unsigned char *source, unsigned int len, unsigned char *target) {
+    CC_SHA1(source, len, target);
+  }
+#else
+  #include <openssl/sha.h>
+  void sha1(source char *source, unsigned int len, unsigned char *target) {
+    SHA1(origin, len, target);
+  }
+#endif
 
 #define MAX_CONNECTIONS 5
 #define TIMEOUT_S 4
@@ -204,7 +216,11 @@ int main(int argc, const char * argv[])
   unsigned short port = atoi(argv[4]);
   memcpy(tcp_addr, &port, 2);
   memcpy(tcp_addr + 2, argv[3], strlen(argv[3]));
-  unsigned char *key = (unsigned char *) sha1(tcp_addr);
+
+  // Construct SHA1 key
+  unsigned char key[CC_SHA1_DIGEST_LENGTH];
+  CC_SHA1(tcp_addr, (unsigned int) tcp_len, key);
+  printf("Sending with key: %s", key);
 
   // Perform registering
   /*

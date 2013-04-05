@@ -2,7 +2,7 @@ CFLAGS=-c -g -Wall -Werror -std=c99 -pedantic
 LDFLAGS=-lgcrypt
 CC = gcc
 LD = gcc
-OBJS = dhtnode.o sha1.o dhtpacket.o
+OBJS = dhtnode.o dhtpacket.o
 PROG = dhtnode
 
 .c.o:
@@ -13,11 +13,8 @@ all: $(PROG)
 $(PROG): $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -o $(PROG)
 
-dhtnode.o: dhtnode.c sha1.c dhtpacket.c dhtpackettypes.h
+dhtnode.o: dhtnode.c dhtpacket.c dhtpackettypes.h
 	$(CC) $(CFLAGS) dhtnode.c
-
-sha1.o: sha1.c
-	$(CC) $(CFLAGS) sha1.c
 
 dhtpacket.o: dhtpacket.c
 	$(CC) $(CFLAGS) dhtpacket.c
