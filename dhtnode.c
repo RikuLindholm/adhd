@@ -15,35 +15,16 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <errno.h>
+
+#define MAX_CONNECTIONS 5
 
 static const unsigned short DHT_SERVER_SHAKE = 0x413f;
 static const unsigned short DHT_CLIENT_SHAKE = 0x4121;
 
-void error(const char *msg) {
-  perror(msg);
-  exit(0);
-}
-
-int DHT_connect(int sockfd, const char *host, int port) {
-  struct sockaddr_in serv_addr;
-  struct hostent *server;
-
-  server = gethostbyname(host);
-  if (server == NULL)
-    return 1;
-
-  memset(&serv_addr, '\0', sizeof(serv_addr));
-  memmove(&serv_addr.sin_addr.s_addr,
-        server->h_addr_list[0],
-        server->h_length);
-
-  serv_addr.sin_family = AF_INET;
-  serv_addr.sin_port = htons(port);
-
-  if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
-    return 1;
-
-  return 0;
+void die(char *reason) {
+  fprintf(stderr, "Fatal error: %s\n", reason);
+  exit(1);
 }
 
 int DHT_handshake(int sock) {
@@ -77,8 +58,53 @@ int DHT_handshake(int sock) {
   return 0;
 }
 
-void DHT_disconnect(int s) {
-  close(s);
+int create_socket(char *host, int port) {
+  int sock;
+  sock = socket(AF_INET, SOCK_STREAM, 0);
+  struct sockaddr_in serv_addr;
+  struct hostent *server;
+
+  server = gethostbyname(host);
+  if (server == NULL)
+    die("Could not find host");
+
+  memset(&serv_addr, '\0', sizeof(serv_addr));
+  memmove(&serv_addr.sin_addr.s_addr,
+        server->h_addr_list[0],
+        server->h_length);
+
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_port = htons(port);
+
+  if (connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
+    die("Could not connect to socket");
+
+  return sock;
+}
+
+int create_listen_socket(int port) {
+  int fd;
+  int t;
+
+  struct sockaddr_in a;
+
+  a.sin_addr.s_addr = INADDR_ANY;
+  a.sin_family = AF_INET;
+  a.sin_port = htons(port);
+
+  fd = socket(PF_INET, SOCK_STREAM, 0);
+  if (fd == -1)
+      die(strerror(errno));
+
+  t = bind(fd, (struct sockaddr *)(&a), sizeof(struct sockaddr_in));
+  if (t == -1)
+      die(strerror(errno));
+
+  t = listen(fd, MAX_CONNECTIONS);
+  if (t == -1)
+      die(strerror(errno));        
+
+  return fd;
 }
 
 int transmit_packet(int sock, DHTPacket *packet) {
@@ -93,7 +119,7 @@ int transmit_packet(int sock, DHTPacket *packet) {
 }
 
 int main(int argc, const char * argv[]) {
-  int sockfd, ret;
+  int sockfd, listener, ret;
   DHTPacket *packet;
 
   if (argc < 5) {
@@ -102,24 +128,12 @@ int main(int argc, const char * argv[]) {
   }
 
   // Create socket
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (sockfd < 0) {
-    error("Could not create socket");
-    exit(1);
-  }
-
-  // Connect socket to server
-  if (DHT_connect(sockfd, argv[1], atoi(argv[2])) > 0) {
-    error("Could not connect to server");
-    exit(1);
-  } else {
-    printf("Connected!\n");
-  }
+  sockfd = create_socket((char *) argv[1], atoi(argv[2]));
+  listener = create_listen_socket(atoi(argv[4]));
 
   // Execute handshake
   if (DHT_handshake(sockfd) > 0) {
-    error("Handshake failed");
-    exit(1);
+    die("Handshake failed");
   } else {
     printf("Handshake was successful\n");
   }
@@ -138,12 +152,17 @@ int main(int argc, const char * argv[]) {
   ret = transmit_packet(sockfd, packet);
   free(packet);
   if (ret > 0) {
-    error("Register sending failed");
-    exit(1);
+    die("Register sending failed");
   } else {
     printf("Registering initializes\n");
   }
-  
+
+  unsigned char buffer[128];
+  ret = 0;
+  while (ret < 44) {
+    ret += recv(sockfd, buffer + ret, 128, 0);
+  }
+  printf("%s", buffer);
   // TODO: Registering client
   // Send DHT_REGISTER_BEGIN to server
   // Wait DHT_REGISTER_ACK from neighbours (x2)
@@ -158,6 +177,6 @@ int main(int argc, const char * argv[]) {
   // Close connection
 
   // Close socket
-  DHT_disconnect(sockfd);
+  close(sockfd);
   return 0;
 }
