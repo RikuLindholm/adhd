@@ -193,21 +193,18 @@ int main(int argc, const char * argv[])
 {
   int sockfd, listener;
 
-  if (argc < 5) {
-    fprintf(stderr, "usage %s server_hostname server_port hostname port\n", argv[0]);
-    exit(0);
-  }
+  if (argc < 5)
+    die("usage %s server_hostname server_port hostname port");
 
   // Create socket
   sockfd = create_socket((char *) argv[1], atoi(argv[2]));
   listener = create_listen_socket(atoi(argv[4]));
 
   // Execute handshake
-  if (DHT_handshake(sockfd) > 0) {
+  if (DHT_handshake(sockfd) > 0)
     die("Handshake failed");
-  } else {
+  else
     printf("Handshake was successful\n");
-  }
 
   // Construct the tcp_address
   // P.S remember to add -lcrypto or -lssl when compiling
@@ -221,22 +218,6 @@ int main(int argc, const char * argv[])
   unsigned char key[CC_SHA1_DIGEST_LENGTH];
   CC_SHA1(tcp_addr, (unsigned int) tcp_len, key);
   printf("Sending with key: %s", key);
-
-  // Perform registering
-  /*
-  packet = create_packet(key, key, DHT_REGISTER_BEGIN, tcp_len, (void *)tcp_addr);
-  ret = transmit_packet(sockfd, packet);
-  free(packet);
-  if (ret > 0) {
-    die("Register begin sending failed");
-  } else {
-    printf("Registering initializes\n");
-  }
-
-  char buffer[44];
-  ret = read(sockfd, buffer, 44);
-  printf("Received: %s\n", buffer);
-  */
 
   // Register begin
   int header_len = 44;
