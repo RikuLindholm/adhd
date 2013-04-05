@@ -111,7 +111,11 @@ int transmit_packet(int sock, DHTPacket *packet) {
   char *data = serialize_packet(packet);
   if (data == NULL)
     return 1;
-  int ret = (int) write(sock, data, 44 + packet->length);
+  printf("Sending packet: %s", data);
+  int ret = 0;
+  while (ret < 44) {
+    ret += send(sock, data, 44 + packet->length, 0);
+  }
   free(data);
   if (ret < 0)
     return 1;
@@ -119,8 +123,7 @@ int transmit_packet(int sock, DHTPacket *packet) {
 }
 
 int main(int argc, const char * argv[]) {
-  int sockfd, listener, ret;
-  DHTPacket *packet;
+  int sockfd, listener;
 
   if (argc < 5) {
     fprintf(stderr, "usage %s server_hostname server_port hostname port\n", argv[0]);
@@ -137,7 +140,7 @@ int main(int argc, const char * argv[]) {
   } else {
     printf("Handshake was successful\n");
   }
-  
+
   // Construct the tcp_address
   // P.S remember to add -lcrypto or -lssl when compiling
   unsigned short tcp_len = strlen(argv[3]) + 2;
@@ -146,23 +149,39 @@ int main(int argc, const char * argv[]) {
   memcpy(tcp_addr, &port, 2);
   memcpy(tcp_addr + 2, argv[3], strlen(argv[3]));
   unsigned char *key = (unsigned char *) sha1(tcp_addr);
-  
+
   // Perform registering
+  /*
   packet = create_packet(key, key, DHT_REGISTER_BEGIN, tcp_len, (void *)tcp_addr);
   ret = transmit_packet(sockfd, packet);
   free(packet);
   if (ret > 0) {
-    die("Register sending failed");
+    die("Register begin sending failed");
   } else {
     printf("Registering initializes\n");
   }
 
-  unsigned char buffer[128];
-  ret = 0;
-  while (ret < 44) {
-    ret += recv(sockfd, buffer + ret, 128, 0);
-  }
-  printf("%s", buffer);
+  char buffer[44];
+  ret = read(sockfd, buffer, 44);
+  printf("Received: %s\n", buffer);
+  */
+
+  // Register begin
+  char *msg = encode_packet(key, key, DHT_REGISTER_BEGIN, tcp_len, (void *) tcp_addr);
+  send(sockfd, msg, 44, 0);
+
+  // Register done
+  msg = encode_packet(key, key, DHT_REGISTER_DONE, tcp_len, (void *)tcp_addr);
+  send(sockfd, msg, 44, 0);
+
+  // Deregister begin
+  msg = encode_packet(key, key, DHT_DEREGISTER_BEGIN, tcp_len, (void *)tcp_addr);
+  send(sockfd, msg, 44, 0);
+
+  // Deregister done
+  msg = encode_packet(key, key, DHT_DEREGISTER_DONE, tcp_len, (void *)tcp_addr);
+  send(sockfd, msg, 44, 0);
+
   // TODO: Registering client
   // Send DHT_REGISTER_BEGIN to server
   // Wait DHT_REGISTER_ACK from neighbours (x2)
@@ -178,5 +197,6 @@ int main(int argc, const char * argv[]) {
 
   // Close socket
   close(sockfd);
+  free(msg);
   return 0;
 }

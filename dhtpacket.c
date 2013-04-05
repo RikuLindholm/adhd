@@ -21,7 +21,7 @@ char *encode_packet(unsigned char *destination, unsigned char *origin,
                     unsigned short type, unsigned short length,
                     void *data)
 {
-  char *result = malloc((length + 44) * sizeof(char));
+  char *result = malloc(44 + length);
   memcpy(result, destination, 20);
   memcpy(result + 20, origin, 20);
   // The following results in big-endian regardless of the machine endianess

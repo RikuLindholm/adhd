@@ -16,6 +16,10 @@ DHTPacket *create_packet(unsigned char *destination, unsigned char *origin,
                         unsigned short type, unsigned short length,
                         void *data);
 
+char *encode_packet(unsigned char *destination, unsigned char *origin,
+                    unsigned short type, unsigned short length,
+                    void *data);
+
 char *serialize_packet(DHTPacket *pkt);
 
 DHTPacket *deserialize_packet(char *);
