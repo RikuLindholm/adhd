@@ -24,12 +24,14 @@
 static const unsigned short DHT_SERVER_SHAKE = 0x413f;
 static const unsigned short DHT_CLIENT_SHAKE = 0x4121;
 
-void die(char *reason) {
+void die(char *reason)
+{
   fprintf(stderr, "Fatal error: %s\n", reason);
   exit(1);
 }
 
-int create_socket(char *host, int port) {
+int create_socket(char *host, int port)
+{
   int sock = socket(AF_INET, SOCK_STREAM, 0);
   struct sockaddr_in serv_addr;
   struct hostent *server;
@@ -52,7 +54,8 @@ int create_socket(char *host, int port) {
   return sock;
 }
 
-int create_listen_socket(int port) {
+int create_listen_socket(int port)
+{
   int fd;
   int t;
 
@@ -78,7 +81,8 @@ int create_listen_socket(int port) {
 }
 
 /* Check quickly if there is more data to be read in this socket.*/
-int data_incoming(int sock) {
+int data_incoming(int sock)
+{
   fd_set rfds;
   FD_ZERO(&rfds);
   FD_SET(sock, &rfds);
@@ -93,7 +97,26 @@ int data_incoming(int sock) {
     return 0;
 }
 
-char *read_all(int sock, int n) {
+int send_all(int sock, char *buf, int *len)
+{
+    int total = 0;        // how many bytes we've sent
+    int bytesleft = *len; // how many we have left to send
+    int n;
+
+    while(total < *len) {
+        n = send(sock, buf+total, bytesleft, 0);
+        if (n == -1) { break; }
+        total += n;
+        bytesleft -= n;
+    }
+
+    *len = total; // return number actually sent here
+
+    return n==-1?-1:0; // return -1 on failure, 0 on success
+}
+
+char *read_all(int sock, int n)
+{
   fd_set rfds;
   struct timeval wait;
   int i = 0, ret;
@@ -110,7 +133,7 @@ char *read_all(int sock, int n) {
     if (select(sock + 1, &rfds, NULL, NULL, &wait) < 0)
       die("Select error");
     if (FD_ISSET(sock, &rfds)){
-      ret = (int) read(sock, buffer + i, 44 - i);
+      ret = recv(sock, buffer + i, 44 - i, 0);
       if (ret < 0)
       die("Read error");
       i += ret;
@@ -124,7 +147,8 @@ char *read_all(int sock, int n) {
   return buffer;
 }
 
-int DHT_handshake(int sock) {
+int DHT_handshake(int sock)
+{
   printf("Attempting handshake...\n");
   
   // Handshake request
@@ -153,7 +177,8 @@ int DHT_handshake(int sock) {
   return 0;
 }
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char * argv[])
+{
   int sockfd, listener;
 
   if (argc < 5) {
@@ -174,7 +199,7 @@ int main(int argc, const char * argv[]) {
 
   // Construct the tcp_address
   // P.S remember to add -lcrypto or -lssl when compiling
-  unsigned short tcp_len = strlen(argv[3]) + 2;
+  int tcp_len = strlen(argv[3]) + 2;
   char tcp_addr[tcp_len];
   unsigned short port = atoi(argv[4]);
   memcpy(tcp_addr, &port, 2);
@@ -198,20 +223,22 @@ int main(int argc, const char * argv[]) {
   */
 
   // Register begin
+  int header_len = 44;
+  int data_len = header_len + tcp_len;
   char *msg = encode_packet(key, key, DHT_REGISTER_BEGIN, tcp_len, (void *) tcp_addr);
-  send(sockfd, msg, 44 + tcp_len, 0);
+  send_all(sockfd, msg, &data_len);
 
   // Register done
   msg = encode_packet(key, key, DHT_REGISTER_DONE, 0, NULL);
-  send(sockfd, msg, 44, 0);
+  send_all(sockfd, msg, &header_len);
 
   // Deregister begin
   msg = encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL);
-  send(sockfd, msg, 44, 0);
+  send_all(sockfd, msg, &header_len);
 
   // Deregister done
   msg = encode_packet(key, key, DHT_DEREGISTER_DONE, 0, NULL);
-  send(sockfd, msg, 44, 0);
+  send_all(sockfd, msg, &header_len);
 
   // TODO: Registering client
   // Send DHT_REGISTER_BEGIN to server
