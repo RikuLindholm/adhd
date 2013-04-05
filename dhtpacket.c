@@ -9,10 +9,6 @@ DHTPacket *create_packet(unsigned char *destination, unsigned char *origin,
   packet->origin = origin;
   packet->type = type;
   packet->length = length;
-  /* MUUTOS
-  if (data != NULL)
-    packet->data = malloc(sizeof(data));
-  */
   packet->data = data;
   return packet;
 }
@@ -27,9 +23,9 @@ char *encode_packet(unsigned char *destination, unsigned char *origin,
   // The following results in big-endian regardless of the machine endianess
   result[40] = (type >> 8) & 0xff;
   result[41] = type & 0xff;
-  //result[42] = (length >> 8) & 0xff;
-  //result[43] = length & 0xff;
-  //memcpy(result + 44, data, length);
+  result[42] = (length >> 8) & 0xff;
+  result[43] = length & 0xff;
+  memcpy(result + 44, data, length);
   return result;
 }
 

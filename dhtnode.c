@@ -168,18 +168,18 @@ int main(int argc, const char * argv[]) {
 
   // Register begin
   char *msg = encode_packet(key, key, DHT_REGISTER_BEGIN, tcp_len, (void *) tcp_addr);
-  send(sockfd, msg, 44, 0);
+  send(sockfd, msg, 44 + tcp_len, 0);
 
   // Register done
-  msg = encode_packet(key, key, DHT_REGISTER_DONE, tcp_len, (void *)tcp_addr);
+  msg = encode_packet(key, key, DHT_REGISTER_DONE, 0, NULL);
   send(sockfd, msg, 44, 0);
 
   // Deregister begin
-  msg = encode_packet(key, key, DHT_DEREGISTER_BEGIN, tcp_len, (void *)tcp_addr);
+  msg = encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL);
   send(sockfd, msg, 44, 0);
 
   // Deregister done
-  msg = encode_packet(key, key, DHT_DEREGISTER_DONE, tcp_len, (void *)tcp_addr);
+  msg = encode_packet(key, key, DHT_DEREGISTER_DONE, 0, NULL);
   send(sockfd, msg, 44, 0);
 
   // TODO: Registering client
