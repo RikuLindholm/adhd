@@ -16,8 +16,10 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/select.h>
 
 #define MAX_CONNECTIONS 5
+#define TIMEOUT_S 4
 
 static const unsigned short DHT_SERVER_SHAKE = 0x413f;
 static const unsigned short DHT_CLIENT_SHAKE = 0x4121;
@@ -27,40 +29,8 @@ void die(char *reason) {
   exit(1);
 }
 
-int DHT_handshake(int sock) {
-  printf("Attempting handshake...\n");
-  int n;
-  char buffer[16];
-
-  // Handshake request
-  memset(buffer, 0, sizeof(buffer));
-  n = (int) read(sock, buffer, sizeof(buffer) - 1);
-  if (n < 0) {
-    printf("Read error");
-    return 1;
-  }
-  
-  // Check handshake
-  unsigned short s_shake = ((buffer[0] & 0xff) << 8) | (buffer[1] & 0xff);
-  printf("Got handshake: 0x%x (%s)\n", s_shake, buffer);
-  if (n != 2 || s_shake != DHT_SERVER_SHAKE){
-    printf("Invalid handshake");
-    return 1;
-  }  
-  
-  // Handshake response
-  printf("Responding to handshake...\n");
-  memset(buffer, 0, sizeof(buffer));
-  buffer[0] = (DHT_CLIENT_SHAKE >> 8) & 0xff;
-  buffer[1] = DHT_CLIENT_SHAKE & 0xff;
-  if (write(sock, buffer, sizeof(unsigned short)) < 0)
-    return 1;
-  return 0;
-}
-
 int create_socket(char *host, int port) {
-  int sock;
-  sock = socket(AF_INET, SOCK_STREAM, 0);
+  int sock = socket(AF_INET, SOCK_STREAM, 0);
   struct sockaddr_in serv_addr;
   struct hostent *server;
 
@@ -107,18 +77,79 @@ int create_listen_socket(int port) {
   return fd;
 }
 
-int transmit_packet(int sock, DHTPacket *packet) {
-  char *data = serialize_packet(packet);
-  if (data == NULL)
+/* Check quickly if there is more data to be read in this socket.*/
+int data_incoming(int sock) {
+  fd_set rfds;
+  FD_ZERO(&rfds);
+  FD_SET(sock, &rfds);
+  struct timeval wait;
+  wait.tv_sec = 0;  // Immediate return
+  wait.tv_usec = 0;
+  if (select(sock + 1, &rfds, NULL, NULL, &wait) < 0)
+    die("Select error");
+  if (FD_ISSET(sock, &rfds))
     return 1;
-  printf("Sending packet: %s", data);
-  int ret = 0;
-  while (ret < 44) {
-    ret += send(sock, data, 44 + packet->length, 0);
+  else
+    return 0;
+}
+
+char *read_all(int sock, int n) {
+  fd_set rfds;
+  struct timeval wait;
+  int i = 0, ret;
+
+  char *buffer = malloc((n + 1)*sizeof(char));
+  if (!buffer)
+    die("Memory error when receiving");
+  while (i < n) {
+    FD_ZERO(&rfds);
+    FD_SET(sock, &rfds);
+    // Wait untill there is more to read
+    wait.tv_sec = TIMEOUT_S;
+    wait.tv_usec = 0;
+    if (select(sock + 1, &rfds, NULL, NULL, &wait) < 0)
+      die("Select error");
+    if (FD_ISSET(sock, &rfds)){
+      ret = (int) read(sock, buffer + i, 44 - i);
+      if (ret < 0)
+      die("Read error");
+      i += ret;
+    } else {
+      printf("Timeout\n");
+      free(buffer);
+      return NULL;
+    }
   }
-  free(data);
-  if (ret < 0)
+  buffer[n] = '\0';
+  return buffer;
+}
+
+int DHT_handshake(int sock) {
+  printf("Attempting handshake...\n");
+  
+  // Handshake request
+  char *buffer = read_all(sock, 2);
+  if (data_incoming(sock)) {
+    printf("Invalid handshake (too much data)\n");
     return 1;
+  }
+  
+  // Check handshake
+  unsigned short s_shake = ((buffer[0] & 0xff) << 8) | (buffer[1] & 0xff);
+  printf("Got handshake: 0x%x (%s)\n", s_shake, buffer);
+  if (s_shake != DHT_SERVER_SHAKE){
+    printf("Invalid handshake");
+    return 1;
+  }  
+  
+  // Handshake response
+  printf("Responding to handshake...\n");
+  memset(buffer, '\0', 2);
+  buffer[0] = (DHT_CLIENT_SHAKE >> 8) & 0xff;
+  buffer[1] = DHT_CLIENT_SHAKE & 0xff;
+  if (write(sock, buffer, 2) < 0)
+    die("Write error");
+  free(buffer);
   return 0;
 }
 
