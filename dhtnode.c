@@ -252,6 +252,7 @@ int main(int argc, const char * argv[])
 
   // Close socket
   close(sockfd);
+  close(listener);
   free(msg);
   return 0;
 }
