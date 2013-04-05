@@ -225,6 +225,60 @@ int main(int argc, const char * argv[])
   char *msg = encode_packet(key, key, DHT_REGISTER_BEGIN, tcp_len, (void *) tcp_addr);
   send_all(sockfd, msg, &data_len);
 
+  // Accept connections
+  fd_set rfds;
+  int ret, nfds, running = 1;
+  if (listener > sockfd)
+    nfds = listener + 1;
+  else
+    nfds = listener + 1;
+
+  while (running) {
+    FD_ZERO(&rfds);
+    FD_SET(0, &rfds); /* Standard input */
+    FD_SET(listener, &rfds);
+    FD_SET(listener, &rfds);
+    // Wait for any input in sockets or standard input
+    ret = select(nfds, &rfds, NULL, NULL, NULL);
+    if (ret == -1)
+      die("Select failed");
+    else if (ret) {
+      if (FD_ISSET(0, &rfds))
+        running = 0; /* Exit when console input available */
+      if (FD_ISSET(sockfd, &rfds)) {
+        // Server responds
+        printf("Server responds\n");
+        DHTPacket *packet = recv_packet(sockfd);
+        if (packet) {
+          if (packet->type == DHT_REGISTER_FAKE_ACK) {
+            // This is the only node
+            // TODO: Forward the information out of the while loop
+            running = 0;
+          } else {
+            printf("Unexpected packet from server\n");
+          }
+          free(packet->destination);
+          free(packet->origin);
+          free(packet->data);
+          free(packet);
+        }
+      }
+      if (FD_ISSET(listener, &rfds)) {
+        
+        // TODO: Neighbour connects
+        
+        // Dummy
+        struct sockaddr_in tempaddr;
+        unsigned int addrlen = 0;
+        int tempfd = accept(listener, (struct sockaddr *)&tempaddr,
+                &addrlen);
+        write(tempfd, "Hello!\n", 7); /* Answer politely then close. */
+        close(tempfd);
+        
+      }
+    }
+  }
+
   // Register done
   msg = encode_packet(key, key, DHT_REGISTER_DONE, 0, NULL);
   send_all(sockfd, msg, &header_len);
