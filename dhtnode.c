@@ -133,15 +133,16 @@ int DHT_handshake(int sock) {
 int transmit_packet(int sock, DHTPacket *packet) {
   char *data = serialize_packet(packet);
   if (data == NULL)
-    return 1;
+    die("Out of memory");
   printf("Sending packet: %s", data);
-  int ret = 0;
-  while (ret < 44) {
-    ret += send(sock, data, 44 + packet->length, 0);
+  int tot = 0, ret;
+  while (tot < 44 + packet->length) {
+    ret = (int) send(sock, data + tot, 44 - tot + packet->length, 0);
+    if (ret < 0)
+      die(strerror(errno));
+    tot += ret;
   }
   free(data);
-  if (ret < 0)
-    return 1;
   return 0;
 }
 
