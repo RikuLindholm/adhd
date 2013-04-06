@@ -8,6 +8,7 @@
 
 #include "dhtpackettypes.h"
 #include "dhtpacket.h"
+#include "connectionstates.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -240,6 +241,21 @@ int DHT_handshake(int sock)
   return 0;
 }
 
+char *parse_address(char *data)
+{
+  char *address;
+  address = malloc(strlen(data) - 2);
+  memcpy(address, data + 2, strlen(data) - 2);
+  return address;
+}
+
+int *parse_port(char *data)
+{
+  int *port = malloc(sizeof(int));
+  memcpy(port, data, 2);
+  return port;
+}
+
 int main(int argc, const char * argv[])
 {
   int retval;
@@ -248,6 +264,8 @@ int main(int argc, const char * argv[])
   fd_set master, socks;
   struct timeval tv;
   int header_len = 44;
+  struct sockaddr_storage remoteaddr; // client address
+  socklen_t addrlen;
 
   // Construct the tcp_address
   unsigned short tcp_len = strlen(argv[3]) + 2;
@@ -264,6 +282,7 @@ int main(int argc, const char * argv[])
   printf("Creating sockets\n");
   int server_sock = create_socket((char *) argv[1], atoi(argv[2]));
   int node_listener = create_listen_socket(atoi(argv[4]));
+  int node_sock; // Holder for incoming node sockets
 
   //printf("Setting timeout values");
   // Set read timeout to zero
@@ -292,23 +311,45 @@ int main(int argc, const char * argv[])
       printf("Some sockets are hot: ");
       // Check standard input
       if (FD_ISSET(STDIN, &socks)) {
-        printf("a key was pressed!\n");
+        printf("Exiting\n");
         running = 0;
       }
 
       if (FD_ISSET(server_sock, &socks)) {
-        printf("got packet from server\n");
-        recv_all(server_sock, 44);
-        state++;
+        printf("got connection from server\n");
+        DHTPacket *pkt = recv_packet(server_sock);
+        if (pkt->type == DHT_REGISTER_FAKE_ACK)
+          state = CONNECTED;
+        else if (pkt->type == DHT_REGISTER_BEGIN) {
+          printf("Another node has connected {%s, %d} - sending ack\n",
+                  parse_address(pkt->data), *parse_port(pkt->data));
+          node_sock = create_socket(parse_address(pkt->data), *parse_port(pkt->data));
+          int data_len = header_len + tcp_len;
+          send_all(node_sock,
+                    encode_packet(key, key, DHT_REGISTER_ACK, tcp_len, (void *) tcp_addr),
+                    &data_len);
+        }
+        free(pkt);
       }
 
-      if (FD_ISSET(node_listener, &socks))
-        printf("got packet from another node\n");
-        // TODO: node packet handler
+      if (FD_ISSET(node_listener, &socks)) {
+        printf("got connection from another node\n");
+        node_sock = accept(node_listener, (struct sockaddr *) &remoteaddr, &addrlen);
+        if (node_sock < 0)
+          die("Could not create new node socket");
+        else {
+          printf("New node connection\n");
+          DHTPacket *pkt = recv_packet(node_sock);
+          if (pkt->type == DHT_REGISTER_ACK)
+            state++;
+          free(pkt);
+        }
+        close(node_sock);
+      }
 
-    } else {
+    } /*else {
       printf("No sockets are hot - Press a key to disconnect\n");
-    }
+    }*/
 
     if (!state) {
       // Send REGISTER_BEGIN
@@ -319,7 +360,7 @@ int main(int argc, const char * argv[])
                   &data_len);
     }
 
-    if (state == DHT_REGISTER_BEGIN) {
+    if (state == CONNECTED) {
       // Send REGISTER_DONE
       printf("Sending REGISTER_DONE\n");
       send_all(server_sock,
