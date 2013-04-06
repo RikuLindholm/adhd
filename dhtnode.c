@@ -18,7 +18,7 @@
 #include <sys/select.h>
 
 // Include CommonCrypto or OpenSSL based on operating system
-#ifdef __APPLE__ && __MACH__
+#ifdef __APPLE__
   #include <CommonCrypto/CommonDigest.h>
   #define SHA1_DIGEST_LENGTH CC_SHA1_DIGEST_LENGTH
   void sha1(unsigned char *source, unsigned int len, unsigned char *target) {
@@ -26,8 +26,9 @@
   }
 #else
   #include <openssl/sha.h>
-  void sha1(source char *source, unsigned int len, unsigned char *target) {
-    SHA1(origin, len, target);
+  #define SHA1_DIGEST_LENGTH SHA_DIGEST_LENGTH
+  void sha1(unsigned char *source, unsigned int len, unsigned char *target) {
+    SHA1(source, len, target);
   }
 #endif
 
