@@ -286,7 +286,7 @@ int main(int argc, const char * argv[])
 
   //printf("Setting timeout values");
   // Set read timeout to zero
-  tv.tv_sec = 1;
+  tv.tv_sec = 0;
   tv.tv_usec = 0;
 
   FD_ZERO(&master); //Reset master socket set
@@ -382,6 +382,7 @@ int main(int argc, const char * argv[])
       send_all(server_sock,
                 encode_packet(key, key, DHT_REGISTER_BEGIN, tcp_len, (void *) tcp_addr),
                   &data_len);
+      state++;
     }
 
     if (state == CONNECTED) {
@@ -399,6 +400,7 @@ int main(int argc, const char * argv[])
       send_all(server_sock,
                 encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL),
                   &header_len);
+      state++;
     }
   }
 

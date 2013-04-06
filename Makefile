@@ -13,7 +13,7 @@ all: $(PROG)
 $(PROG): $(OBJS)
 	$(LD) $(OBJS) -o $(PROG) $(LDFLAGS)
 
-dhtnode.o: dhtnode.c dhtpacket.c dhtpackettypes.h
+dhtnode.o: dhtnode.c dhtpacket.c dhtpackettypes.h connectionstates.h
 	$(CC) $(CFLAGS) dhtnode.c $(LDFLAGS)
 
 dhtpacket.o: dhtpacket.c

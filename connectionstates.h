@@ -1,5 +1,5 @@
 #define DISCONNECTED  0
-#define CONNECTED     2
-#define REGISTERED    3
-#define DEREGISTERING 4
-#define DEREGISTERED  5
+#define CONNECTED     3
+#define REGISTERED    4
+#define DEREGISTERING 5
+#define DEREGISTERED  6
