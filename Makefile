@@ -1,5 +1,5 @@
 CFLAGS=-c -g -Wall -Werror -std=c99 -pedantic
-LDFLAGS=-lgcrypt
+LDFLAGS=-lcrypto
 CC = gcc
 LD = gcc
 OBJS = dhtnode.o dhtpacket.o
@@ -11,10 +11,10 @@ PROG = dhtnode
 all: $(PROG)
 
 $(PROG): $(OBJS)
-	$(LD) $(LDFLAGS) $(OBJS) -o $(PROG)
+	$(LD) $(OBJS) -o $(PROG) $(LDFLAGS)
 
 dhtnode.o: dhtnode.c dhtpacket.c dhtpackettypes.h
-	$(CC) $(CFLAGS) dhtnode.c
+	$(CC) $(CFLAGS) dhtnode.c $(LDFLAGS)
 
 dhtpacket.o: dhtpacket.c
 	$(CC) $(CFLAGS) dhtpacket.c
