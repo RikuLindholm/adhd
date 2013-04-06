@@ -148,7 +148,7 @@ char *recv_all(int sock, int n)
     if (select(sock + 1, &rfds, NULL, NULL, &wait) < 0)
       die("Select error");
     if (FD_ISSET(sock, &rfds)){
-      ret = recv(sock, buffer + i, 44 - i, 0);
+      ret = recv(sock, buffer + i, n - i, 0);
       if (ret < 0)
       die("Read error");
       i += ret;
