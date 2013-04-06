@@ -2,7 +2,7 @@
 
 DHTPacket *create_packet(unsigned char *destination, unsigned char *origin,
                         unsigned short type, unsigned short length,
-                        void *data)
+                        unsigned char *data)
 {
   DHTPacket *packet = malloc(sizeof(struct DHTPacket));
   packet->destination = destination;
@@ -15,7 +15,7 @@ DHTPacket *create_packet(unsigned char *destination, unsigned char *origin,
 
 char *encode_packet(unsigned char *destination, unsigned char *origin,
                     unsigned short type, unsigned short length,
-                    void *data)
+                    unsigned char *data)
 {
   char *result = malloc(44 + length);
   memcpy(result, destination, 20);
@@ -43,7 +43,7 @@ DHTPacket *deserialize_packet(char *data) {
   memcpy(origin, data + 20, 20);
   unsigned short type = ((data[40] & 0xff) << 8) | (data[41] & 0xff);
   unsigned short length = ((data[42] & 0xff) << 8) | (data[43] & 0xff);
-  void *payload = malloc(length*sizeof(char));
+  unsigned char *payload = malloc(length*sizeof(char));
   memcpy(payload, data + 44, length);
   return create_packet(destination, origin, type, length, payload);
 }

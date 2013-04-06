@@ -9,16 +9,16 @@ typedef struct DHTPacket {
   unsigned char *origin;
   unsigned short type;
   unsigned short length;
-  void *data;
+  unsigned char *data;
 } DHTPacket;
 
 DHTPacket *create_packet(unsigned char *destination, unsigned char *origin,
                         unsigned short type, unsigned short length,
-                        void *data);
+                        unsigned char *data);
 
 char *encode_packet(unsigned char *destination, unsigned char *origin,
                     unsigned short type, unsigned short length,
-                    void *data);
+                    unsigned char *data);
 
 char *serialize_packet(DHTPacket *pkt);
 

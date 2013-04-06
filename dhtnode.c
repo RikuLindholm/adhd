@@ -131,13 +131,13 @@ int send_all(int sock, char *buf, int *len)
     return n==-1?-1:0; // return -1 on failure, 0 on success
 }
 
-char *recv_all(int sock, int n)
+unsigned char *recv_all(int sock, int n)
 {
   fd_set rfds;
   struct timeval wait;
   int i = 0, ret;
 
-  char *buffer = malloc((n + 1)*sizeof(char));
+  unsigned char *buffer = malloc((n + 1)*sizeof(char));
   if (!buffer)
     die("Memory error when receiving");
   while (i < n) {
@@ -167,7 +167,7 @@ DHTPacket *recv_packet(int sock) {
   printf("Receiving a packet...\n");  
   
   // Read 44 first bytes
-  char *header = recv_all(sock, 44);
+  unsigned char *header = recv_all(sock, 44);
   if (!header){
     printf("Timeout\n");
     return NULL;
@@ -185,7 +185,7 @@ DHTPacket *recv_packet(int sock) {
   free(header);
   
   // Read the payload
-  char *payload;
+  unsigned char *payload;
   if (length > 0) {
     payload = recv_all(sock, length);
     if (!payload){
@@ -208,7 +208,7 @@ DHTPacket *recv_packet(int sock) {
   }
   
   printf("Packet received\n");
-  return create_packet(destination, origin, type, length, (void *)payload);
+  return create_packet(destination, origin, type, length, payload);
 }
 
 int DHT_handshake(int sock)
@@ -216,7 +216,7 @@ int DHT_handshake(int sock)
   printf("Attempting handshake...\n");
   
   // Handshake request
-  char *buffer = recv_all(sock, 2);
+  unsigned char *buffer = recv_all(sock, 2);
   if (data_incoming(sock)) {
     printf("Invalid handshake (too much data)\n");
     return 1;
@@ -241,15 +241,15 @@ int DHT_handshake(int sock)
   return 0;
 }
 
-char *parse_address(char *data)
+unsigned char *parse_host(unsigned char *data)
 {
-  char *address;
-  address = malloc(strlen(data) - 2);
-  memcpy(address, data + 2, strlen(data) - 2);
+  unsigned char *address;
+  address = malloc(strlen((char *) data) - 2);
+  memcpy(address, data + 2, strlen((char *) data) - 2);
   return address;
 }
 
-int *parse_port(char *data)
+int *parse_port(unsigned char *data)
 {
   int *port = malloc(sizeof(int));
   memcpy(port, data, 2);
@@ -322,12 +322,30 @@ int main(int argc, const char * argv[])
           state = CONNECTED;
         else if (pkt->type == DHT_REGISTER_BEGIN) {
           printf("Another node has connected {%s, %d} - sending ack\n",
-                  parse_address(pkt->data), *parse_port(pkt->data));
-          node_sock = create_socket(parse_address(pkt->data), *parse_port(pkt->data));
+                  parse_host(pkt->data), *parse_port(pkt->data));
+          node_sock = create_socket((char *) parse_host(pkt->data), *parse_port(pkt->data));
           int data_len = header_len + tcp_len;
           send_all(node_sock,
                     encode_packet(key, key, DHT_REGISTER_ACK, tcp_len, (void *) tcp_addr),
                     &data_len);
+        } else if (pkt->type == DHT_DEREGISTER_ACK) {
+          // Send DEREGISTER_BEGIN to neighbour nodes
+          unsigned char address1[tcp_len];
+          unsigned char address2[tcp_len];
+          memcpy(address1, pkt->data, tcp_len);
+          memcpy(address1, pkt->data + tcp_len, tcp_len);
+          int neighbour_socks[2] = {
+            create_socket((char *) parse_host(address1), *parse_port(address1)),
+            create_socket((char *) parse_host(address2), *parse_port(address2))
+          };
+          for (int i = 0; i < 2; i++) {
+            send_all(neighbour_socks[i],
+                      encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL),
+                        &header_len);
+            close(neighbour_socks[i]);
+          }
+        } else if (pkt->type == DHT_DEREGISTER_DONE) {
+          running = 0;
         }
         free(pkt);
       }
@@ -342,13 +360,19 @@ int main(int argc, const char * argv[])
           DHTPacket *pkt = recv_packet(node_sock);
           if (pkt->type == DHT_REGISTER_ACK)
             state++;
+          else if (pkt->type == DHT_DEREGISTER_BEGIN) {
+            // Send acknowledgement of neighbour deregister to server
+            send_all(server_sock,
+                      encode_packet(pkt->origin, key, DHT_DEREGISTER_DONE, 0, NULL),
+                        &header_len);
+          }
           free(pkt);
         }
         close(node_sock);
       }
 
     } /*else {
-      printf("No sockets are hot - Press a key to disconnect\n");
+      printf("No sockets are hot - Press any key to disconnect\n");
     }*/
 
     if (!state) {
@@ -366,25 +390,17 @@ int main(int argc, const char * argv[])
       send_all(server_sock,
                 encode_packet(key, key, DHT_REGISTER_DONE, 0, NULL),
                   &header_len);
-      state++;
+      state = REGISTERED;
+    }
+
+    if (state == DEREGISTERING) {
+      // Send DEREGISTER_BEGIN
+      printf("Sending DEREGISTER_BEGIN\n");
+      send_all(server_sock,
+                encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL),
+                  &header_len);
     }
   }
-
-  //TODO: Move disconnection into the loop as well
-  // Send DEREGISTER_BEGIN
-  printf("Sending DEREGISTER_BEGIN\n");
-  send_all(server_sock,
-            encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL),
-              &header_len);
-
-  printf("Getting response to DEREGISTER_BEGIN\n");
-  recv_all(server_sock, 44);
-
-  // Send DEREGISTER_BEGIN
-  printf("Sending DEREGISTER_DONE\n");
-  send_all(server_sock,
-            encode_packet(key, key, DHT_DEREGISTER_DONE, 0, NULL),
-              &header_len);
 
   // Close socket
   close(server_sock);
