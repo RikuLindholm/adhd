@@ -10,25 +10,18 @@ You can start the server by running:
 
     java -jar DHTServer.jar <port>
 
-## Running the client
-
-### Dependencies
-
-For generating the SHA-1 hashes and compiling the client you'll need to install
-the Libgcrypt cryptography library. On OSX the easiest way is through Homebrew:
-
-    brew install libgcrypt
-
-Google for instructions on Linux/Windows ;)
-
-### Compiling and running the client
+## Compiling and running the client
 
 The client can be compiled easily by running:
 
-    make all
+    make
 
-This compiles the code into an executable named 'main' which can be run with:
+This compiles the code into an executable named 'dhtonode' which can be run with:
 
-  ./main <server-address> <server-port> <my-address> <my-port>
+  make run  // Defaults to options: 127.0.0.1 3200 127.0.0.1 50000
+
+Alternatively, to manually define the client options, it can be run with:
+ 
+  ./dhtonode <server-address> <server-port> <my-address> <my-port>
 
 Note that the server needs to be running for proper functionality.
