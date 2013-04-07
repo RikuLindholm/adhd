@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 typedef struct DHTPacket {
   unsigned char *destination;
@@ -15,6 +16,8 @@ typedef struct DHTPacket {
 DHTPacket *create_packet(unsigned char *destination, unsigned char *origin,
                         unsigned short type, unsigned short length,
                         unsigned char *data);
+
+void destroy_packet(DHTPacket *pkt);
 
 char *encode_packet(unsigned char *destination, unsigned char *origin,
                     unsigned short type, unsigned short length,
