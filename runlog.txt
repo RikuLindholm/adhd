@@ -1,0 +1,314 @@
+// Runlog: testing 4 nodes
+
+// -----------------------------------------------------------------------------
+// NODE 1
+// -----------------------------------------------------------------------------
+kosh c 1003 % ./dhtnode localhost 3200 localhost 50001
+Creating sockets
+Performing handshake...
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Starting the main loop...
+Sending REGISTER_BEGIN
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Sending REGISTER_DONE
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Another node has connected {localhost, 50002} - sending ack
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Another node has connected {localhost, 50002} - sending ack
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Another node has connected {localhost, 50003} - sending ack
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Another node has connected {localhost, 50004} - sending ack
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+
+Some sockets are hot: Deregistering...
+Sending DEREGISTER_BEGIN
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Informing the neighbours
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+kosh c 1004 %
+
+// -----------------------------------------------------------------------------
+// NODE 2
+// -----------------------------------------------------------------------------
+kosh c 1003 % ./dhtnode localhost 3200 localhost 50002
+Creating sockets
+Performing handshake...
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Starting the main loop...
+Sending REGISTER_BEGIN
+Some sockets are hot: got connection from another node
+New node connection
+Attempting handshake...
+Got handshake: 0x4121
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from another node
+New node connection
+Attempting handshake...
+Got handshake: 0x4121
+Receiving a packet...
+Packet received
+Sending REGISTER_DONE
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Another node has connected {localhost, 50003} - sending ack
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Another node has connected {localhost, 50004} - sending ack
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+
+Some sockets are hot: Deregistering...
+Sending DEREGISTER_BEGIN
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Informing the neighbours
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+kosh c 1004 %
+
+// -----------------------------------------------------------------------------
+// NODE 3
+// -----------------------------------------------------------------------------
+kosh c 1003 % ./dhtnode localhost 3200 localhost 50003
+Creating sockets
+Performing handshake...
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Starting the main loop...
+Sending REGISTER_BEGIN
+Some sockets are hot: got connection from another node
+New node connection
+Attempting handshake...
+Got handshake: 0x4121
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from another node
+New node connection
+Attempting handshake...
+Got handshake: 0x4121
+Receiving a packet...
+Packet received
+Sending REGISTER_DONE
+Some sockets are hot: got connection from another node
+New node connection
+Attempting handshake...
+Got handshake: 0x4121
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from another node
+New node connection
+Attempting handshake...
+Got handshake: 0x4121
+Receiving a packet...
+Packet received
+
+Some sockets are hot: Deregistering...
+Sending DEREGISTER_BEGIN
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Informing the neighbours
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+kosh c 1004 %
+
+// -----------------------------------------------------------------------------
+// NODE 4
+// -----------------------------------------------------------------------------
+kosh c 1003 % ./dhtnode localhost 3200 localhost 50004
+Creating sockets
+Performing handshake...
+Attempting handshake...
+Got handshake: 0x413f
+Responding to handshake...
+Starting the main loop...
+Sending REGISTER_BEGIN
+Some sockets are hot: got connection from another node
+New node connection
+Attempting handshake...
+Got handshake: 0x4121
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from another node
+New node connection
+Attempting handshake...
+Got handshake: 0x4121
+Receiving a packet...
+Packet received
+Sending REGISTER_DONE
+Some sockets are hot: got connection from another node
+New node connection
+Attempting handshake...
+Got handshake: 0x4121
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from another node
+New node connection
+Attempting handshake...
+Got handshake: 0x4121
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from another node
+New node connection
+Attempting handshake...
+Got handshake: 0x4121
+Receiving a packet...
+Packet received
+Some sockets are hot: got connection from another node
+New node connection
+Attempting handshake...
+Got handshake: 0x4121
+Receiving a packet...
+Packet received
+
+Some sockets are hot: Deregistering...
+Sending DEREGISTER_BEGIN
+Some sockets are hot: got connection from server
+Receiving a packet...
+Packet received
+Deregistering denied
+^C
+kosh c 1004 %
+
+// -----------------------------------------------------------------------------
+// SERVER
+// -----------------------------------------------------------------------------
+kosh c 1006 % java -jar DHTServer.jar 3200
+Listening on port 3200
+Getting packet: Target: 95930b8bba60052f568c8adb149e30cd848d7381, sender: 95930b8bba60052f568c8adb149e30cd848d7381, type: 1, length: 11, data: c3 51 6c 6f 63 61 6c 68 6f 73 74
+Sending packet: Target: 95930b8bba60052f568c8adb149e30cd848d7381, sender: 95930b8bba60052f568c8adb149e30cd848d7381, type: 3, length: 0, data:
+Getting packet: Target: 95930b8bba60052f568c8adb149e30cd848d7381, sender: 95930b8bba60052f568c8adb149e30cd848d7381, type: 4, length: 0, data:
+Getting packet: Target: d4fff2363860f0ab21ac39853198cda2a1776b00, sender: d4fff2363860f0ab21ac39853198cda2a1776b00, type: 1, length: 11, data: c3 52 6c 6f 63 61 6c 68 6f 73 74
+Sending packet: Target: d4fff2363860f0ab21ac39853198cda2a1776b00, sender: d4fff2363860f0ab21ac39853198cda2a1776b00, type: 1, length: 11, data: c3 52 6c 6f 63 61 6c 68 6f 73 74
+Sending packet: Target: d4fff2363860f0ab21ac39853198cda2a1776b00, sender: d4fff2363860f0ab21ac39853198cda2a1776b00, type: 1, length: 11, data: c3 52 6c 6f 63 61 6c 68 6f 73 74
+Getting packet: Target: d4fff2363860f0ab21ac39853198cda2a1776b00, sender: d4fff2363860f0ab21ac39853198cda2a1776b00, type: 4, length: 0, data:
+Sending packet: Target: d4fff2363860f0ab21ac39853198cda2a1776b00, sender: d4fff2363860f0ab21ac39853198cda2a1776b00, type: 4, length: 0, data:
+Sending packet: Target: d4fff2363860f0ab21ac39853198cda2a1776b00, sender: d4fff2363860f0ab21ac39853198cda2a1776b00, type: 4, length: 0, data:
+Getting packet: Target: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, sender: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, type: 1, length: 11, data: c3 53 6c 6f 63 61 6c 68 6f 73 74
+Sending packet: Target: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, sender: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, type: 1, length: 11, data: c3 53 6c 6f 63 61 6c 68 6f 73 74
+Sending packet: Target: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, sender: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, type: 1, length: 11, data: c3 53 6c 6f 63 61 6c 68 6f 73 74
+Getting packet: Target: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, sender: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, type: 4, length: 0, data:
+Sending packet: Target: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, sender: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, type: 4, length: 0, data:
+Sending packet: Target: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, sender: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, type: 4, length: 0, data:
+Getting packet: Target: d6efb8d1665224e779335a4005428653622eadb8, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 1, length: 11, data: c3 54 6c 6f 63 61 6c 68 6f 73 74
+Sending packet: Target: d6efb8d1665224e779335a4005428653622eadb8, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 1, length: 11, data: c3 54 6c 6f 63 61 6c 68 6f 73 74
+Sending packet: Target: d6efb8d1665224e779335a4005428653622eadb8, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 1, length: 11, data: c3 54 6c 6f 63 61 6c 68 6f 73 74
+Getting packet: Target: d6efb8d1665224e779335a4005428653622eadb8, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 4, length: 0, data:
+Sending packet: Target: d6efb8d1665224e779335a4005428653622eadb8, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 4, length: 0, data:
+Sending packet: Target: d6efb8d1665224e779335a4005428653622eadb8, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 4, length: 0, data:
+Getting packet: Target: 95930b8bba60052f568c8adb149e30cd848d7381, sender: 95930b8bba60052f568c8adb149e30cd848d7381, type: 11, length: 0, data:
+Sending packet: Target: 95930b8bba60052f568c8adb149e30cd848d7381, sender: 95930b8bba60052f568c8adb149e30cd848d7381, type: 12, length: 22, data: c3 54 6c 6f 63 61 6c 68 6f 73 74 c3 53 6c 6f 63 61 6c 68 6f 73 74
+Getting packet: Target: 95930b8bba60052f568c8adb149e30cd848d7381, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 13, length: 0, data:
+Sending packet: Target: 95930b8bba60052f568c8adb149e30cd848d7381, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 13, length: 0, data:
+Getting packet: Target: 95930b8bba60052f568c8adb149e30cd848d7381, sender: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, type: 13, length: 0, data:
+Sending packet: Target: 95930b8bba60052f568c8adb149e30cd848d7381, sender: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, type: 13, length: 0, data:
+Sending packet: null
+Disconnecting unregistered node: 95930b8bba60052f568c8adb149e30cd848d7381
+Getting packet: Target: d4fff2363860f0ab21ac39853198cda2a1776b00, sender: d4fff2363860f0ab21ac39853198cda2a1776b00, type: 11, length: 0, data:
+Sending packet: Target: d4fff2363860f0ab21ac39853198cda2a1776b00, sender: d4fff2363860f0ab21ac39853198cda2a1776b00, type: 12, length: 22, data: c3 53 6c 6f 63 61 6c 68 6f 73 74 c3 54 6c 6f 63 61 6c 68 6f 73 74
+Getting packet: Target: d4fff2363860f0ab21ac39853198cda2a1776b00, sender: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, type: 13, length: 0, data:
+Getting packet: Target: d4fff2363860f0ab21ac39853198cda2a1776b00, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 13, length: 0, data:
+Sending packet: Target: d4fff2363860f0ab21ac39853198cda2a1776b00, sender: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, type: 13, length: 0, data:
+Sending packet: Target: d4fff2363860f0ab21ac39853198cda2a1776b00, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 13, length: 0, data:
+Sending packet: null
+Disconnecting unregistered node: d4fff2363860f0ab21ac39853198cda2a1776b00
+Getting packet: Target: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, sender: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, type: 11, length: 0, data:
+Sending packet: Target: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, sender: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, type: 12, length: 22, data: c3 54 6c 6f 63 61 6c 68 6f 73 74 c3 54 6c 6f 63 61 6c 68 6f 73 74
+Getting packet: Target: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 13, length: 0, data:
+Sending packet: Target: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 13, length: 0, data:
+Getting packet: Target: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 13, length: 0, data:
+Sending packet: Target: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 13, length: 0, data:
+Sending packet: null
+Disconnecting unregistered node: 9bd6c8a60afcf053c1da3e90f90d795a7ca0f3fb
+Getting packet: Target: d6efb8d1665224e779335a4005428653622eadb8, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 11, length: 0, data:
+Sending packet: Target: d6efb8d1665224e779335a4005428653622eadb8, sender: d6efb8d1665224e779335a4005428653622eadb8, type: 14, length: 0, data:
+Sending packet: null
+Disconnecting registered node: d6efb8d1665224e779335a4005428653622eadb8
+^C
+kosh c 1007 %
