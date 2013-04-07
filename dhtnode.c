@@ -270,17 +270,16 @@ int DHT_handshake_listener(int sock)
 
 unsigned char *parse_host(unsigned char *data)
 {
-  unsigned char *address;
-  address = malloc(strlen((char *) data) - 2);
-  memcpy(address, data + 2, strlen((char *) data) - 2);
+  int len = strlen((char *) data) - 2;
+  unsigned char *address = malloc(len + 1);
+  memcpy(address, data + 2, len);
+  address[len] = '\0';
   return address;
 }
 
-int *parse_port(unsigned char *data)
+int parse_port(unsigned char *data)
 {
-  int *port = malloc(sizeof(int));
-  memcpy(port, data, 2);
-  return port;
+  return (int)(((data[0] & 0xff) << 8) | (data[1] & 0xff));
 }
 
 int main(int argc, const char * argv[])
@@ -291,6 +290,9 @@ int main(int argc, const char * argv[])
   fd_set master, socks;
   struct timeval tv;
   int header_len = 44;
+  unsigned char *node_host;
+  int node_port;
+  
   // struct sockaddr_storage remoteaddr; // client address
   // socklen_t addrlen;
 
@@ -298,7 +300,8 @@ int main(int argc, const char * argv[])
   unsigned short tcp_len = strlen(argv[3]) + 2;
   unsigned char tcp_addr[tcp_len];
   unsigned short port = atoi(argv[4]);
-  memcpy(tcp_addr, &port, 2);
+  tcp_addr[0] = (port >> 8) & 0xff;     // In network byte order
+  tcp_addr[1] = port & 0xff;
   memcpy(tcp_addr + 2, argv[3], strlen(argv[3]));
 
   // Construct SHA1 key
@@ -351,30 +354,30 @@ int main(int argc, const char * argv[])
         if (pkt->type == DHT_REGISTER_FAKE_ACK)
           state = CONNECTED;
         else if (pkt->type == DHT_REGISTER_BEGIN) {
+          node_host = parse_host(pkt->data);
+          node_port = parse_port(pkt->data);
           printf("Another node has connected {%s, %d} - sending ack\n",
-                  parse_host(pkt->data), *parse_port(pkt->data));
-          node_sock = create_socket((char *) parse_host(pkt->data), *parse_port(pkt->data));
+                  node_host, node_port);
+          node_sock = create_socket((char *) node_host, node_port);
           // Perform handshake
           DHT_handshake(node_sock);
           int data_len = header_len + tcp_len;
           send_all(node_sock,
                     encode_packet(key, key, DHT_REGISTER_ACK, tcp_len, (void *) tcp_addr),
                     &data_len);
+          free(node_host);
         } else if (pkt->type == DHT_DEREGISTER_ACK) {
           // Send DEREGISTER_BEGIN to neighbour nodes
-          unsigned char address1[tcp_len];
-          unsigned char address2[tcp_len];
-          memcpy(address1, pkt->data, tcp_len);
-          memcpy(address1, pkt->data + tcp_len, tcp_len);
-          int neighbour_socks[2] = {
-            create_socket((char *) parse_host(address1), *parse_port(address1)),
-            create_socket((char *) parse_host(address2), *parse_port(address2))
-          };
           for (int i = 0; i < 2; i++) {
-            send_all(neighbour_socks[i],
+            node_host = parse_host(pkt->data + i*tcp_len);
+            node_port = parse_port(pkt->data + i*tcp_len);
+            node_sock = create_socket((char *) node_host, node_port);
+            DHT_handshake(node_sock);
+            send_all(node_sock,
                       encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL),
                         &header_len);
-            close(neighbour_socks[i]);
+            free(node_host);
+            close(node_sock);
           }
         } else if (pkt->type == DHT_DEREGISTER_DONE) {
           running = 0;
