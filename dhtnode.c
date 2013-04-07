@@ -40,12 +40,15 @@
 static const unsigned short DHT_SERVER_SHAKE = 0x413f;
 static const unsigned short DHT_CLIENT_SHAKE = 0x4121;
 
+// Utility method for printing error messages and exiting
 void die(char *reason)
 {
   fprintf(stderr, "Fatal error: %s\n", reason);
   exit(1);
 }
 
+// Utility method for creating a socket to given port on given host
+// Return: the socket
 int create_socket(char *host, int port)
 {
   int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -70,6 +73,8 @@ int create_socket(char *host, int port)
   return sock;
 }
 
+// Utility method for creating a socket listening the given port
+// Return: the socket
 int create_listen_socket(int port)
 {
   int fd;
@@ -96,7 +101,8 @@ int create_listen_socket(int port)
   return fd;
 }
 
-/* Check quickly if there is more data to be read in this socket.*/
+// A utility method for checking if a socket has incoming data
+// Return: 1 if socket has data else 0
 int data_incoming(int sock)
 {
   fd_set rfds;
@@ -113,6 +119,9 @@ int data_incoming(int sock)
     return 0;
 }
 
+// A utility method for safely sending data through socket
+// Input: sock - sock to send to, buf - buffer to read from, len - bytes to send
+// Return: -1 on failure, 0 on success
 int send_all(int sock, char *buf, int *len)
 {
     int total = 0;        // how many bytes we've sent
@@ -128,9 +137,12 @@ int send_all(int sock, char *buf, int *len)
 
     *len = total; // return number actually sent here
 
-    return n==-1?-1:0; // return -1 on failure, 0 on success
+    return (n == -1 ? -1 : 0);
 }
 
+// A utility method for reading any amount of data from a socket
+// Input: sock - socket to read, n - how many bytes to read
+// Return: pointer to received data (char[])
 unsigned char *recv_all(int sock, int n)
 {
   fd_set rfds;
@@ -151,7 +163,7 @@ unsigned char *recv_all(int sock, int n)
     if (FD_ISSET(sock, &rfds)){
       ret = recv(sock, buffer + i, n - i, 0);
       if (ret < 0)
-      die("Read error");
+        die("Read error");
       i += ret;
     } else {
       printf("Timeout\n");
@@ -163,10 +175,11 @@ unsigned char *recv_all(int sock, int n)
   return buffer;
 }
 
-DHTPacket *recv_packet(int sock) {
-  printf("Receiving a packet...\n");  
-  
-  // Read 44 first bytes
+// Receive a packet from the given socket
+// Return: a DHTPacket based on the response data
+DHTPacket *recv_packet(int sock)
+{  
+  // Read 44 first bytes == header
   unsigned char *header = recv_all(sock, 44);
   if (!header){
     printf("Timeout\n");
@@ -208,32 +221,32 @@ DHTPacket *recv_packet(int sock) {
     return NULL;
   }
   */
-  
-  printf("Packet received\n");
-  return create_packet(destination, origin, type, length, payload);
+
+  DHTPacket *pkt = create_packet(destination, origin, type, length, payload);
+  if (payload != NULL)
+    free(payload);
+  return pkt;
 }
 
-int DHT_handshake(int sock)
-{
-  printf("Attempting handshake...\n");
-  
+// Perform handshake with the given socket (server or node)
+// Return: 1 if handshake failed, 0 if handshake was successful
+int handshake(int sock)
+{ 
   // Handshake request
   unsigned char *buffer = recv_all(sock, 2);
   if (data_incoming(sock)) {
     printf("Invalid handshake (too much data)\n");
     return 1;
   }
-  
+
   // Check handshake
   unsigned short s_shake = ((buffer[0] & 0xff) << 8) | (buffer[1] & 0xff);
-  printf("Got handshake: 0x%x\n", s_shake);
   if (s_shake != DHT_SERVER_SHAKE){
-    printf("Invalid handshake");
+    printf("Invalid handshake\n");
     return 1;
-  }  
+  }
   
   // Handshake response
-  printf("Responding to handshake...\n");
   memset(buffer, '\0', 2);
   buffer[0] = (DHT_CLIENT_SHAKE >> 8) & 0xff;
   buffer[1] = DHT_CLIENT_SHAKE & 0xff;
@@ -243,10 +256,10 @@ int DHT_handshake(int sock)
   return 0;
 }
 
-int DHT_handshake_listener(int sock)
+// Utility method for creating a handshake listener socket
+// Return: 1 if handshake failed, else 0
+int handshake_listener(int sock)
 {
-  printf("Attempting handshake...\n");
-  
   // Send handshake
   unsigned char *buffer = malloc(3*sizeof(char));
   memset(buffer, '\0', 3);
@@ -259,15 +272,16 @@ int DHT_handshake_listener(int sock)
   // Get respond
   buffer = recv_all(sock, 2);
   unsigned short s_shake = ((buffer[0] & 0xff) << 8) | (buffer[1] & 0xff);
-  printf("Got handshake: 0x%x\n", s_shake);
   if (s_shake != DHT_CLIENT_SHAKE){
-    printf("Invalid handshake");
+    printf("Invalid handshake\n");
     return 1;
   }
   free(buffer);
   return 0;
 }
 
+// Parse host from a given TCP address (port+ host)
+// Return: pointer to host char array
 unsigned char *parse_host(unsigned char *data)
 {
   int len = strlen((char *) data) - 2;
@@ -277,6 +291,7 @@ unsigned char *parse_host(unsigned char *data)
   return address;
 }
 
+// Parse port from from a given TCP address (port+host)
 int parse_port(unsigned char *data)
 {
   return (int)(((data[0] & 0xff) << 8) | (data[1] & 0xff));
@@ -310,7 +325,6 @@ int main(int argc, const char * argv[])
   sha1(tcp_addr, (unsigned int) tcp_len, key);
 
   // Create sockets
-  printf("Creating sockets\n");
   int server_sock = create_socket((char *) argv[1], atoi(argv[2]));
   int node_listener = create_listen_socket(atoi(argv[4]));
   int node_sock; // Holder for incoming node sockets
@@ -326,11 +340,12 @@ int main(int argc, const char * argv[])
 	FD_SET(server_sock, &master); // Add server sock master set
 	FD_SET(node_listener, &master); // Add server listener to master set
 
-  // Perform initial handshake
-  printf("Performing handshake...\n");
-  DHT_handshake(server_sock);
-  
-  printf("Starting the main loop...\n");
+  // Perform initial handshake with server
+  if (handshake(server_sock) == 0)
+    printf("Handshake with server was successful\n");
+  else
+    die("Could not perform handshake with the server\n");
+
   while (running) {
     socks = master; // Reset socks from master
 
@@ -342,39 +357,38 @@ int main(int argc, const char * argv[])
 
     // Socket data handler
     if (retval) {
-      printf("Some sockets are hot: ");
       // Check standard input
       if (FD_ISSET(STDIN, &socks)) {
         while ((std_input = getchar()) != '\n' && std_input != EOF);
         if (state == REGISTERED){
-          printf("Deregistering...\n");
+          printf("Disconnecting...\n");
           state = DEREGISTERING;
         }
         //running = 0;
       }
 
+      // Check if incoming data from server
       if (FD_ISSET(server_sock, &socks)) {
-        printf("got connection from server\n");
         DHTPacket *pkt = recv_packet(server_sock);
-        if (pkt->type == DHT_REGISTER_FAKE_ACK)
+        if (pkt->type == DHT_REGISTER_FAKE_ACK) {
           state = CONNECTED;
-        else if (pkt->type == DHT_REGISTER_BEGIN) {
+
+        } else if (pkt->type == DHT_REGISTER_BEGIN) {
           node_host = parse_host(pkt->data);
           node_port = parse_port(pkt->data);
           printf("Another node has connected {%s, %d} - sending ack\n",
                   node_host, node_port);
           node_sock = create_socket((char *) node_host, node_port);
           // Perform handshake
-          DHT_handshake(node_sock);
+          handshake(node_sock);
           int data_len = header_len + tcp_len;
           send_all(node_sock,
                     encode_packet(key, key, DHT_REGISTER_ACK, tcp_len, (void *) tcp_addr),
                     &data_len);
           free(node_host);
+
         } else if (pkt->type == DHT_DEREGISTER_ACK) {
           // Send DEREGISTER_BEGIN to neighbour nodes
-          printf("Informing the neighbours\n");
-          
           unsigned char address1[tcp_len + 1];
           unsigned char address2[tcp_len + 1];
           memcpy(address1, pkt->data, tcp_len);
@@ -386,17 +400,18 @@ int main(int argc, const char * argv[])
             node_host = parse_host(addresses[i]);
             node_port = parse_port(addresses[i]);
             node_sock = create_socket((char *) node_host, node_port);
-            DHT_handshake(node_sock);
+            handshake(node_sock);
             send_all(node_sock,
                       encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL),
                         &header_len);
             free(node_host);
             close(node_sock);
           }
+
         } else if (pkt->type == DHT_DEREGISTER_DENY) {
           // Cancel deregistering
           if (state == DEREGISTERING + 1){
-            printf("Deregistering denied\n");
+            printf("Deregistering denied - press CTRL + C to force disconnect\n");
             state = REGISTERED;
           } else {
             printf("Unexpected packet from server\n");
@@ -404,41 +419,38 @@ int main(int argc, const char * argv[])
         }else if (pkt->type == DHT_DEREGISTER_DONE) {
           state++;
         }/* else if (pkt->type == DHT_REGISTER_DONE) {
-          // Neighbour ready        
+          // Neighbour ready
         }*/
-        free(pkt);
+        destroy_packet(pkt);
       }
 
+      // Check from incoming node connections
       if (FD_ISSET(node_listener, &socks)) {
-        printf("got connection from another node\n");
         node_sock = accept(node_listener, NULL, NULL);
         if (node_sock < 0)
           die("Could not create new node socket");
         else {
-          printf("New node connection\n");
-          // Perform handshake
-          DHT_handshake_listener(node_sock);
+          // Perform handshake with node
+          handshake_listener(node_sock);
           DHTPacket *pkt = recv_packet(node_sock);
+
           if (pkt->type == DHT_REGISTER_ACK)
             state++;
-          else if (pkt->type == DHT_DEREGISTER_BEGIN) {
+          else if (pkt->type == DHT_DEREGISTER_BEGIN)
             // Send acknowledgement of neighbour deregister to server
             send_all(server_sock,
                       encode_packet(pkt->origin, key, DHT_DEREGISTER_DONE, 0, NULL),
                         &header_len);
-          }
-          free(pkt);
+
+          destroy_packet(pkt);
         }
         close(node_sock);
       }
 
-    } /*else {
-      printf("No sockets are hot - Press any key to disconnect\n");
-    }*/
+    }
 
     if (!state) {
       // Send REGISTER_BEGIN
-      printf("Sending REGISTER_BEGIN\n");
       int data_len = header_len + tcp_len;
       send_all(server_sock,
                 encode_packet(key, key, DHT_REGISTER_BEGIN, tcp_len, (void *) tcp_addr),
@@ -448,16 +460,15 @@ int main(int argc, const char * argv[])
 
     if (state == CONNECTED) {
       // Send REGISTER_DONE
-      printf("Sending REGISTER_DONE\n");
       send_all(server_sock,
                 encode_packet(key, key, DHT_REGISTER_DONE, 0, NULL),
                   &header_len);
       state = REGISTERED;
+      printf("Registered to server - press [enter] to disconnect\n");
     }
 
     if (state == DEREGISTERING) {
       // Send DEREGISTER_BEGIN
-      printf("Sending DEREGISTER_BEGIN\n");
       send_all(server_sock,
                 encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL),
                   &header_len);
@@ -465,6 +476,7 @@ int main(int argc, const char * argv[])
     }
     if (state == DEREGISTERED) {
       // Ok to exit
+      printf("Successfully disconnected!\n");
       running = 0;
     }
   }
