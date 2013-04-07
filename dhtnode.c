@@ -65,7 +65,7 @@ int create_socket(char *host, int port)
   serv_addr.sin_port = htons(port);
 
   if (connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-    die("Could not connect to socket");
+    die(strerror(errno));
 
   return sock;
 }
@@ -198,6 +198,7 @@ DHTPacket *recv_packet(int sock) {
     payload = NULL;
   }
   
+  /*
   // Check that all was read
   if (data_incoming(sock)) {
     printf("Corrupted length of received data\n");
@@ -206,6 +207,7 @@ DHTPacket *recv_packet(int sock) {
     free(payload);
     return NULL;
   }
+  */
   
   printf("Packet received\n");
   return create_packet(destination, origin, type, length, payload);
@@ -224,7 +226,7 @@ int DHT_handshake(int sock)
   
   // Check handshake
   unsigned short s_shake = ((buffer[0] & 0xff) << 8) | (buffer[1] & 0xff);
-  printf("Got handshake: 0x%x (%s)\n", s_shake, buffer);
+  printf("Got handshake: 0x%x\n", s_shake);
   if (s_shake != DHT_SERVER_SHAKE){
     printf("Invalid handshake");
     return 1;
@@ -237,6 +239,31 @@ int DHT_handshake(int sock)
   buffer[1] = DHT_CLIENT_SHAKE & 0xff;
   if (write(sock, buffer, 2) < 0)
     die("Write error");
+  free(buffer);
+  return 0;
+}
+
+int DHT_handshake_listener(int sock)
+{
+  printf("Attempting handshake...\n");
+  
+  // Send handshake
+  unsigned char *buffer = malloc(3*sizeof(char));
+  memset(buffer, '\0', 3);
+  buffer[0] = (DHT_SERVER_SHAKE >> 8) & 0xff;
+  buffer[1] = DHT_SERVER_SHAKE & 0xff;
+  if (write(sock, buffer, 2) < 0)
+    die("Write error");
+  free(buffer);
+  
+  // Get respond
+  buffer = recv_all(sock, 2);
+  unsigned short s_shake = ((buffer[0] & 0xff) << 8) | (buffer[1] & 0xff);
+  printf("Got handshake: 0x%x\n", s_shake);
+  if (s_shake != DHT_CLIENT_SHAKE){
+    printf("Invalid handshake");
+    return 1;
+  }
   free(buffer);
   return 0;
 }
@@ -264,8 +291,8 @@ int main(int argc, const char * argv[])
   fd_set master, socks;
   struct timeval tv;
   int header_len = 44;
-  struct sockaddr_storage remoteaddr; // client address
-  socklen_t addrlen;
+  // struct sockaddr_storage remoteaddr; // client address
+  // socklen_t addrlen;
 
   // Construct the tcp_address
   unsigned short tcp_len = strlen(argv[3]) + 2;
@@ -324,6 +351,8 @@ int main(int argc, const char * argv[])
           printf("Another node has connected {%s, %d} - sending ack\n",
                   parse_host(pkt->data), *parse_port(pkt->data));
           node_sock = create_socket((char *) parse_host(pkt->data), *parse_port(pkt->data));
+          // Perform handshake
+          DHT_handshake(node_sock);
           int data_len = header_len + tcp_len;
           send_all(node_sock,
                     encode_packet(key, key, DHT_REGISTER_ACK, tcp_len, (void *) tcp_addr),
@@ -352,11 +381,13 @@ int main(int argc, const char * argv[])
 
       if (FD_ISSET(node_listener, &socks)) {
         printf("got connection from another node\n");
-        node_sock = accept(node_listener, (struct sockaddr *) &remoteaddr, &addrlen);
+        node_sock = accept(node_listener, NULL, NULL);
         if (node_sock < 0)
-          die("Could not create new node socket");
+          die(strerror(errno));
         else {
           printf("New node connection\n");
+          // Perform handshake
+          DHT_handshake_listener(node_sock);
           DHTPacket *pkt = recv_packet(node_sock);
           if (pkt->type == DHT_REGISTER_ACK)
             state++;
