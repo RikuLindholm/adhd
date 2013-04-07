@@ -18,10 +18,10 @@ The client can be compiled easily by running:
 
 This compiles the code into an executable named 'dhtonode' which can be run with:
 
-  make run  // Defaults to options: 127.0.0.1 3200 127.0.0.1 50000
+    make run  // Defaults to options: 127.0.0.1 3200 127.0.0.1 50000
 
 Alternatively, to manually define the client options, it can be run with:
  
-  ./dhtonode <server-address> <server-port> <my-address> <my-port>
+    ./dhtonode <server-address> <server-port> <my-address> <my-port>
 
 Note that the server needs to be running for proper functionality.
