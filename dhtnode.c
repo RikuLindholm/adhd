@@ -303,6 +303,7 @@ int main(int argc, const char * argv[])
   tcp_addr[0] = (port >> 8) & 0xff;     // In network byte order
   tcp_addr[1] = port & 0xff;
   memcpy(tcp_addr + 2, argv[3], strlen(argv[3]));
+  int std_input;
 
   // Construct SHA1 key
   unsigned char key[SHA1_DIGEST_LENGTH];
@@ -328,7 +329,7 @@ int main(int argc, const char * argv[])
   // Perform initial handshake
   printf("Performing handshake...\n");
   DHT_handshake(server_sock);
-
+  
   printf("Starting the main loop...\n");
   while (running) {
     socks = master; // Reset socks from master
@@ -344,8 +345,12 @@ int main(int argc, const char * argv[])
       printf("Some sockets are hot: ");
       // Check standard input
       if (FD_ISSET(STDIN, &socks)) {
-        printf("Exiting\n");
-        running = 0;
+        while ((std_input = getchar()) != '\n' && std_input != EOF);
+        if (state == REGISTERED){
+          printf("Deregistering...\n");
+          state = DEREGISTERING;
+        }
+        //running = 0;
       }
 
       if (FD_ISSET(server_sock, &socks)) {
@@ -368,9 +373,18 @@ int main(int argc, const char * argv[])
           free(node_host);
         } else if (pkt->type == DHT_DEREGISTER_ACK) {
           // Send DEREGISTER_BEGIN to neighbour nodes
+          printf("Informing the neighbours\n");
+          
+          unsigned char address1[tcp_len + 1];
+          unsigned char address2[tcp_len + 1];
+          memcpy(address1, pkt->data, tcp_len);
+          memcpy(address2, pkt->data + tcp_len, tcp_len);
+          address1[tcp_len] = '\0';
+          address2[tcp_len] = '\0';
+          unsigned char *addresses[2] = {address1, address2};
           for (int i = 0; i < 2; i++) {
-            node_host = parse_host(pkt->data + i*tcp_len);
-            node_port = parse_port(pkt->data + i*tcp_len);
+            node_host = parse_host(addresses[i]);
+            node_port = parse_port(addresses[i]);
             node_sock = create_socket((char *) node_host, node_port);
             DHT_handshake(node_sock);
             send_all(node_sock,
@@ -379,9 +393,19 @@ int main(int argc, const char * argv[])
             free(node_host);
             close(node_sock);
           }
-        } else if (pkt->type == DHT_DEREGISTER_DONE) {
-          running = 0;
-        }
+        } else if (pkt->type == DHT_DEREGISTER_DENY) {
+          // Cancel deregistering
+          if (state == DEREGISTERING + 1){
+            printf("Deregistering denied\n");
+            state = REGISTERED;
+          } else {
+            printf("Unexpected packet from server\n");
+          }
+        }else if (pkt->type == DHT_DEREGISTER_DONE) {
+          state++;
+        }/* else if (pkt->type == DHT_REGISTER_DONE) {
+          // Neighbour ready        
+        }*/
         free(pkt);
       }
 
@@ -438,6 +462,10 @@ int main(int argc, const char * argv[])
                 encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL),
                   &header_len);
       state++;
+    }
+    if (state == DEREGISTERED) {
+      // Ok to exit
+      running = 0;
     }
   }
 
