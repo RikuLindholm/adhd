@@ -65,7 +65,7 @@ int create_socket(char *host, int port)
   serv_addr.sin_port = htons(port);
 
   if (connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-    die(strerror(errno));
+    die("Could not connect to socket");
 
   return sock;
 }
@@ -331,7 +331,10 @@ int main(int argc, const char * argv[])
     socks = master; // Reset socks from master
 
     // Count sockets with incoming data
-    retval = select(node_listener + 1, &socks, NULL, NULL, &tv);
+    if (state == REGISTERED)
+      retval = select(node_listener + 1, &socks, NULL, NULL, NULL);
+    else
+      retval = select(node_listener + 1, &socks, NULL, NULL, &tv);
 
     // Socket data handler
     if (retval) {
@@ -383,7 +386,7 @@ int main(int argc, const char * argv[])
         printf("got connection from another node\n");
         node_sock = accept(node_listener, NULL, NULL);
         if (node_sock < 0)
-          die(strerror(errno));
+          die("Could not create new node socket");
         else {
           printf("New node connection\n");
           // Perform handshake
