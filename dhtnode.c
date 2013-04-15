@@ -297,6 +297,36 @@ int parse_port(unsigned char *data)
   return (int)(((data[0] & 0xff) << 8) | (data[1] & 0xff));
 }
 
+// Places the difference |a - b| into array result.
+// All arrays must be of length n.
+void difference(unsigned char *result, unsigned char *a,
+                unsigned char *b, int n)
+{
+  // Check if a is bigger than b. If not -> switch
+  for (int i = 0; i < n; i++) {
+    if (b[i] > a[i]) {
+      unsigned char *temp = a;
+      a = b;
+      b = temp;
+      break;
+    } else if (b[i] < a[i])
+      break;
+  }
+  
+  short carry = 0;
+  short v1;
+  // Perform subtraction a - b
+  for (int i = n - 1; i >= 0; i--) {
+    v1 = (short)a[i] - carry - (short)b[i];
+    carry = 0;
+    if (v1 < 0){
+      carry = 1;
+      v1 += 0x10000;
+    }
+    result[i] = v1 & 0xff;
+  }  
+}
+
 int main(int argc, const char * argv[])
 {
   int retval;
