@@ -297,13 +297,12 @@ int parse_port(unsigned char *data)
   return (int)(((data[0] & 0xff) << 8) | (data[1] & 0xff));
 }
 
-// Places the difference |a - b| into array result.
-// All arrays must be of length n.
-void difference(unsigned char *result, unsigned char *a,
-                unsigned char *b, int n)
+// Places the difference between keys a and b: |a - b| into array result.
+// All arrays must be of length SHA1_DIGEST_LENGTH.
+void difference(unsigned char *result, unsigned char *a, unsigned char *b)
 {
   // Check if a is bigger than b. If not -> switch
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < SHA1_DIGEST_LENGTH; i++) {
     if (b[i] > a[i]) {
       unsigned char *temp = a;
       a = b;
@@ -316,7 +315,7 @@ void difference(unsigned char *result, unsigned char *a,
   short carry = 0;
   short v1;
   // Perform subtraction a - b
-  for (int i = n - 1; i >= 0; i--) {
+  for (int i = SHA1_DIGEST_LENGTH - 1; i >= 0; i--) {
     v1 = (short)a[i] - carry - (short)b[i];
     carry = 0;
     if (v1 < 0){
