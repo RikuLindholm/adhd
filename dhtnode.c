@@ -40,11 +40,68 @@
 static const unsigned short DHT_SERVER_SHAKE = 0x413f;
 static const unsigned short DHT_CLIENT_SHAKE = 0x4121;
 
+typedef struct list_node {
+    DHTPacket *packet;
+    struct list_node *next;
+    char selected;
+} list_node;
+
 // Utility method for printing error messages and exiting
 void die(char *reason)
 {
   fprintf(stderr, "Fatal error: %s\n", reason);
   exit(1);
+}
+
+// Inserts the given DHTPacket into the given list.
+void push_to_list(list_node **list, DHTPacket *packet)
+{
+  list_node *new = malloc(sizeof(list_node));
+  if (new == NULL) die("Out of memory");
+  new->packet = packet;
+  new->selected = 0;
+  if (list) new->next = *list;
+  else new->next = NULL;
+  *list = new;
+}
+
+// Remove the selected nodes from the given list.
+void remove_from_list(list_node **list)
+{
+  if (list == NULL) return;
+  list_node *cur = *list;
+  list_node *prev = NULL;
+  list_node *next;
+  while (cur) {
+    if (cur->selected) {
+      next = cur->next;
+      destroy_packet(cur->packet);
+      free(cur);
+      cur = next;
+    } else {
+      if (prev)
+        prev->next = cur;
+      else
+        *list = cur;
+      prev = cur;
+      cur = cur->next;
+    }
+  }
+  if (prev) prev->next = NULL;
+}
+
+// Destroy the given list.
+void destroy_list(list_node **list)
+{
+  if (list == NULL) return;
+  list_node *cur = *list;
+  list_node *next;
+  while (cur) {
+    next = cur->next;
+    destroy_packet(cur->packet);
+    free(cur);
+    cur = next;
+  }
 }
 
 // Utility method for creating a socket to given port on given host
@@ -210,17 +267,6 @@ DHTPacket *recv_packet(int sock)
   } else {
     payload = NULL;
   }
-  
-  /*
-  // Check that all was read
-  if (data_incoming(sock)) {
-    printf("Corrupted length of received data\n");
-    free(destination);
-    free(origin);
-    free(payload);
-    return NULL;
-  }
-  */
 
   DHTPacket *pkt = create_packet(destination, origin, type, length, payload);
   if (payload != NULL)
@@ -432,7 +478,13 @@ int main(int argc, const char * argv[])
     printf("Handshake with server was successful\n");
   else
     die("Could not perform handshake with the server\n");
-
+  
+  list_node *datalist = NULL;
+  list_node *cur_node;
+  unsigned char *compare_key1;
+  unsigned char *compare_key2;
+  char break_off;
+  
   while (running) {
     socks = master; // Reset socks from master
 
@@ -459,6 +511,7 @@ int main(int argc, const char * argv[])
         DHTPacket *pkt = recv_packet(server_sock);
         if (pkt->type == DHT_REGISTER_FAKE_ACK) {
           state = CONNECTED;
+          destroy_packet(pkt);
 
         } else if (pkt->type == DHT_REGISTER_BEGIN) {
           node_host = parse_host(pkt->data);
@@ -473,6 +526,7 @@ int main(int argc, const char * argv[])
                     encode_packet(key, key, DHT_REGISTER_ACK, tcp_len, (void *) tcp_addr),
                     &data_len);
           free(node_host);
+          destroy_packet(pkt);
 
         } else if (pkt->type == DHT_DEREGISTER_ACK) {
           // Send DEREGISTER_BEGIN to neighbour nodes
@@ -494,6 +548,7 @@ int main(int argc, const char * argv[])
             free(node_host);
             close(node_sock);
           }
+          destroy_packet(pkt);
 
         } else if (pkt->type == DHT_DEREGISTER_DENY) {
           // Cancel deregistering
@@ -503,12 +558,50 @@ int main(int argc, const char * argv[])
           } else {
             printf("Unexpected packet from server\n");
           }
-        }else if (pkt->type == DHT_DEREGISTER_DONE) {
+          destroy_packet(pkt);
+        
+        } else if (pkt->type == DHT_DEREGISTER_DONE) {
           state++;
+          destroy_packet(pkt);
+        
+        } else if (pkt->type == DHT_PUT_DATA) {
+          // Receive data
+          push_to_list(&datalist, pkt);
+          send_all(server_sock,
+                  encode_packet(pkt->destination, pkt->origin, DHT_PUT_DATA_ACK, 0, NULL),
+                        &header_len);
+          
+        } else if (pkt->type == DHT_DUMP_DATA) {
+          // Dump data
+          if (list != NULL){
+            compare_key1 = pkt->destination;
+            cur_node = datalist;
+            while (cur_node) {
+              break_off = 0;
+              compare_key2 = cur_node->packet->destination;
+              for (int i = 0; i < SHA1_DIGEST_LENGTH; i++) {
+                if (compare_key1[i] != compare_key2[i]){
+                  break_off = 1;
+                  break;
+                }
+              }
+              if (break_off == 0) {
+                // Dump node found
+                cur_node->selected = 1;
+                remove_from_list(&datalist);
+                break;
+              }
+              cur_node = cur_node->next;
+            }
+          }
+          send_all(server_sock,
+                  encode_packet(pkt->destination, pkt->origin, DHT_DUMP_DATA_ACK, 0, NULL),
+                        &header_len);
+          destroy_packet(pkt);
+          
         }/* else if (pkt->type == DHT_REGISTER_DONE) {
           // Neighbour ready
         }*/
-        destroy_packet(pkt);
       }
 
       // Check from incoming node connections
