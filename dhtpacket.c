@@ -31,6 +31,7 @@ DHTPacket *create_packet(unsigned char *destination, unsigned char *origin,
 }
 
 void destroy_packet(DHTPacket *pkt) {
+  if (pkt == NULL) return;
   free(pkt->destination);
   free(pkt->origin);
   if (pkt->data != NULL)
