@@ -268,9 +268,7 @@ DHTPacket *recv_packet(int sock)
     payload = NULL;
   }
 
-  DHTPacket *pkt = create_packet(destination, origin, type, length, payload);
-  if (payload != NULL)
-    free(payload);
+  DHTPacket *pkt = bind_packet(destination, origin, type, length, payload);
   return pkt;
 }
 
@@ -479,6 +477,8 @@ int main(int argc, const char * argv[])
   else
     die("Could not perform handshake with the server\n");
   
+  
+  char *temp_pkt;
   list_node *datalist = NULL;
   list_node *cur_node;
   unsigned char *compare_key1;
@@ -522,10 +522,11 @@ int main(int argc, const char * argv[])
           // Perform handshake
           handshake(node_sock);
           int data_len = header_len + tcp_len;
-          send_all(node_sock,
-                    encode_packet(key, key, DHT_REGISTER_ACK, tcp_len, (void *) tcp_addr),
-                    &data_len);
+          temp_pkt = encode_packet(key, key, DHT_REGISTER_ACK,
+                                    tcp_len, (void *) tcp_addr);
+          send_all(node_sock, temp_pkt, &data_len);
           free(node_host);
+          free(temp_pkt);
           destroy_packet(pkt);
 
         } else if (pkt->type == DHT_DEREGISTER_ACK) {
@@ -542,11 +543,11 @@ int main(int argc, const char * argv[])
             node_port = parse_port(addresses[i]);
             node_sock = create_socket((char *) node_host, node_port);
             handshake(node_sock);
-            send_all(node_sock,
-                      encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL),
-                        &header_len);
+            temp_pkt = encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL);
+            send_all(node_sock, temp_pkt, &header_len);
             free(node_host);
             close(node_sock);
+            free(temp_pkt);
           }
           destroy_packet(pkt);
 
@@ -567,13 +568,14 @@ int main(int argc, const char * argv[])
         } else if (pkt->type == DHT_PUT_DATA) {
           // Receive data
           push_to_list(&datalist, pkt);
-          send_all(server_sock,
-                  encode_packet(pkt->destination, pkt->origin, DHT_PUT_DATA_ACK, 0, NULL),
-                        &header_len);
+          temp_pkt = encode_packet(pkt->destination, pkt->origin,
+                                    DHT_PUT_DATA_ACK, 0, NULL);
+          send_all(server_sock, temp_pkt, &header_len);
+          free(temp_pkt);
           
         } else if (pkt->type == DHT_DUMP_DATA) {
           // Dump data
-          if (list != NULL){
+          if (datalist != NULL){
             compare_key1 = pkt->destination;
             cur_node = datalist;
             while (cur_node) {
@@ -594,14 +596,18 @@ int main(int argc, const char * argv[])
               cur_node = cur_node->next;
             }
           }
-          send_all(server_sock,
-                  encode_packet(pkt->destination, pkt->origin, DHT_DUMP_DATA_ACK, 0, NULL),
-                        &header_len);
+          temp_pkt = encode_packet(pkt->destination, pkt->origin,
+                                    DHT_DUMP_DATA_ACK, 0, NULL);
+          send_all(server_sock, temp_pkt, &header_len);
+          free(temp_pkt);
           destroy_packet(pkt);
           
-        }/* else if (pkt->type == DHT_REGISTER_DONE) {
-          // Neighbour ready
-        }*/
+        } else if (pkt->type == DHT_REGISTER_DONE) {
+          // TODO !!
+          destroy_packet(pkt);
+        } else {
+          destroy_packet(pkt);
+        }
       }
 
       // Check from incoming node connections
@@ -616,12 +622,13 @@ int main(int argc, const char * argv[])
 
           if (pkt->type == DHT_REGISTER_ACK)
             state++;
-          else if (pkt->type == DHT_DEREGISTER_BEGIN)
+          else if (pkt->type == DHT_DEREGISTER_BEGIN) {
             // Send acknowledgement of neighbour deregister to server
-            send_all(server_sock,
-                      encode_packet(pkt->origin, key, DHT_DEREGISTER_DONE, 0, NULL),
-                        &header_len);
-
+            temp_pkt = encode_packet(pkt->origin, key,
+                                      DHT_DEREGISTER_DONE, 0, NULL);
+            send_all(server_sock, temp_pkt, &header_len);
+            free(temp_pkt);
+          }
           destroy_packet(pkt);
         }
         close(node_sock);
@@ -632,26 +639,27 @@ int main(int argc, const char * argv[])
     if (!state) {
       // Send REGISTER_BEGIN
       int data_len = header_len + tcp_len;
-      send_all(server_sock,
-                encode_packet(key, key, DHT_REGISTER_BEGIN, tcp_len, (void *) tcp_addr),
-                  &data_len);
+      temp_pkt = encode_packet(key, key, DHT_REGISTER_BEGIN,
+                                tcp_len, (void *) tcp_addr);
+      send_all(server_sock, temp_pkt, &data_len);
+      free(temp_pkt);
       state++;
     }
 
     if (state == CONNECTED) {
       // Send REGISTER_DONE
-      send_all(server_sock,
-                encode_packet(key, key, DHT_REGISTER_DONE, 0, NULL),
-                  &header_len);
+      temp_pkt = encode_packet(key, key, DHT_REGISTER_DONE, 0, NULL);
+      send_all(server_sock, temp_pkt, &header_len);
+      free(temp_pkt);
       state = REGISTERED;
       printf("Registered to server - press [enter] to disconnect\n");
     }
 
     if (state == DEREGISTERING) {
       // Send DEREGISTER_BEGIN
-      send_all(server_sock,
-                encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL),
-                  &header_len);
+      temp_pkt = encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL);
+      send_all(server_sock, temp_pkt, &header_len);
+      free(temp_pkt);
       state++;
     }
     if (state == DEREGISTERED) {
@@ -660,7 +668,10 @@ int main(int argc, const char * argv[])
       running = 0;
     }
   }
-
+  
+  // Destroy data
+  destroy_list(&datalist);
+  
   // Close socket
   close(server_sock);
   close(node_listener);
