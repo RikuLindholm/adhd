@@ -622,18 +622,33 @@ int main(int argc, const char * argv[])
         else {
           // Perform handshake with node
           handshake_listener(node_sock);
-          DHTPacket *pkt = recv_packet(node_sock);
-
-          if (pkt->type == DHT_REGISTER_ACK)
-            state++;
-          else if (pkt->type == DHT_DEREGISTER_BEGIN) {
-            // Send acknowledgement of neighbour deregister to server
-            temp_pkt = encode_packet(pkt->origin, key,
-                                      DHT_DEREGISTER_DONE, 0, NULL);
-            send_all(server_sock, temp_pkt, &header_len);
-            free(temp_pkt);
+          // Loop until no incoming data transfer packets
+          while (1) {
+            DHTPacket *pkt = recv_packet(node_sock);
+            
+            if (pkt->type == DHT_TRANSFER_DATA) {
+              push_to_list(&datalist, pkt);
+            
+            } else if (pkt->type == DHT_REGISTER_ACK) {
+              state++;
+              destroy_packet(pkt);
+              break;
+            
+            } else if (pkt->type == DHT_DEREGISTER_BEGIN) {
+              // Send acknowledgement of neighbour deregister to server
+              temp_pkt = encode_packet(pkt->origin, key,
+                                        DHT_DEREGISTER_DONE, 0, NULL);
+              send_all(server_sock, temp_pkt, &header_len);
+              free(temp_pkt);
+              destroy_packet(pkt);
+              break;
+            
+            } else {
+              // Unsupported packet
+              destroy_packet(pkt);
+              break;
+            }
           }
-          destroy_packet(pkt);
         }
         close(node_sock);
       }
