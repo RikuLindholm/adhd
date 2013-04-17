@@ -35,7 +35,8 @@ char *encode_packet(unsigned char *destination, unsigned char *origin,
   result[41] = type & 0xff;
   result[42] = (length >> 8) & 0xff;
   result[43] = length & 0xff;
-  memcpy(result + 44, data, length);
+  if (length > 0)
+    memcpy(result + 44, data, length);
   return result;
 }
 
