@@ -521,10 +521,12 @@ int main(int argc, const char * argv[])
           node_sock = create_socket((char *) node_host, node_port);
           // Perform handshake
           handshake(node_sock);
-          int data_len = header_len + tcp_len;
-          temp_pkt = encode_packet(key, key, DHT_REGISTER_ACK,
-                                    tcp_len, (void *) tcp_addr);
-          send_all(node_sock, temp_pkt, &data_len);
+          
+          // TODO !!!
+          // Send the data that is closer to the new node
+          
+          temp_pkt = encode_packet(key, key, DHT_REGISTER_ACK, 0, NULL);
+          send_all(node_sock, temp_pkt, &header_len);
           free(node_host);
           free(temp_pkt);
           destroy_packet(pkt);
@@ -603,9 +605,11 @@ int main(int argc, const char * argv[])
           destroy_packet(pkt);
           
         } else if (pkt->type == DHT_REGISTER_DONE) {
-          // TODO !!
+          // Drop the not needed data chuncks that was send for the new node
+          remove_from_list(&datalist);
           destroy_packet(pkt);
         } else {
+          // Non supported packet received
           destroy_packet(pkt);
         }
       }
@@ -640,7 +644,7 @@ int main(int argc, const char * argv[])
       // Send REGISTER_BEGIN
       int data_len = header_len + tcp_len;
       temp_pkt = encode_packet(key, key, DHT_REGISTER_BEGIN,
-                                tcp_len, (void *) tcp_addr);
+                                tcp_len, tcp_addr);
       send_all(server_sock, temp_pkt, &data_len);
       free(temp_pkt);
       state++;
