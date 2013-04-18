@@ -88,6 +88,7 @@ void remove_from_list(list_node **list)
     }
   }
   if (prev) prev->next = NULL;
+  else *list = NULL;
 }
 
 // Destroy the given list.
@@ -102,6 +103,7 @@ void destroy_list(list_node **list)
     free(cur);
     cur = next;
   }
+  *list = NULL;
 }
 
 // Utility method for creating a socket to given port on given host
@@ -324,16 +326,31 @@ int handshake_listener(int sock)
   return 0;
 }
 
-// Parse host from a given TCP address (port+ host)
-// Return: pointer to host char array
-unsigned char *parse_host(unsigned char *data)
+/*
+// Utility method for waiting for a responce (ack) from the server socket.
+// Return: 1 if the received responce matches the ack_type, 0 otherwise
+int wait_for_ack_form_server(int sock, unsigned short ack_type)
 {
-  int len = strlen((char *) data) - 2;
-  unsigned char *address = malloc(len + 1);
-  memcpy(address, data + 2, len);
-  address[len] = '\0';
-  return address;
+  fd_set rfds;
+  FD_ZERO(&rfds);
+  FD_SET(sock, &rfds);
+  if (select(sock + 1, &rfds, NULL, NULL, NULL) < 0)
+    die("Select error");
+  if (FD_ISSET(sock, &rfds)) {
+    DHTPacket *pkt = recv_packet(sock);
+    if (pkt->type == ack_type) {
+      destroy_packet(pkt);
+      return 1;
+    } else {
+      destroy_packet(pkt);
+      return 0;
+    }
+  }
+  die("Select error");
+  // Non reachable code (if not presented an warning occours)
+  return -1;
 }
+*/
 
 // Parse port from from a given TCP address (port+host)
 int parse_port(unsigned char *data)
@@ -443,13 +460,13 @@ int main(int argc, const char * argv[])
   // socklen_t addrlen;
 
   // Construct the tcp_address
-  unsigned short tcp_len = strlen(argv[3]) + 2;
+  unsigned short tcp_len = strlen(argv[3]) + 3;
   unsigned char tcp_addr[tcp_len];
   unsigned short port = atoi(argv[4]);
   tcp_addr[0] = (port >> 8) & 0xff;     // In network byte order
   tcp_addr[1] = port & 0xff;
   memcpy(tcp_addr + 2, argv[3], strlen(argv[3]));
-  int std_input;
+  tcp_addr[tcp_len - 1] = '\0';
 
   // Construct SHA1 key
   unsigned char key[SHA1_DIGEST_LENGTH];
@@ -473,7 +490,7 @@ int main(int argc, const char * argv[])
 
   // Perform initial handshake with server
   if (handshake(server_sock) == 0)
-    printf("Handshake with server was successful\n");
+    printf("Handshake with server was successful\nJoining to the network\n");
   else
     die("Could not perform handshake with the server\n");
   
@@ -481,9 +498,12 @@ int main(int argc, const char * argv[])
   char *temp_pkt;
   list_node *datalist = NULL;
   list_node *cur_node;
-  unsigned char *compare_key1;
-  unsigned char *compare_key2;
+  unsigned char *compare_key1, *compare_key2, *temp_char_array;
   char break_off;
+  int data_len;
+  int temp_int, first_char;
+  unsigned char test_data[] = "test_data_x";
+  unsigned char test_key[SHA1_DIGEST_LENGTH];
   
   while (running) {
     socks = master; // Reset socks from master
@@ -498,12 +518,70 @@ int main(int argc, const char * argv[])
     if (retval) {
       // Check standard input
       if (FD_ISSET(STDIN, &socks)) {
-        while ((std_input = getchar()) != '\n' && std_input != EOF);
+        // Utility actions by providing a string with first character as:
+        // 'q': force quit
+        // 'l': list the current data of the node
+        // '1'-'9': store test_data 1-9
+        // 'a'-'i': get and print the test_data 1-9
+        // 'A'-'I': drop the test_data 1-9
+        first_char = getchar();
+        temp_int = first_char;
+        while (temp_int != '\n' && temp_int != EOF) temp_int = getchar();
         if (state == REGISTERED){
-          printf("Disconnecting...\n");
-          state = DEREGISTERING;
+          if (first_char == 'q') {
+            printf("Force disconnect\n");
+            running = 0;
+          } else if (first_char == 'l') {
+            if (datalist != NULL){
+              printf("List of data in this node:\n");
+              cur_node = datalist;
+              while (cur_node) {
+                printf("| %.*s\n", cur_node->packet->length,
+                        cur_node->packet->data);
+                cur_node = cur_node->next;
+              }
+              printf("----------------\n");
+            } else printf("No data in this node\n");
+          } else if ('1' <= first_char && first_char <= '9') {
+            // Store data
+            data_len = strlen((char *) test_data) + 1;
+            test_data[data_len - 2] = first_char;
+            printf("Storing data: \"%s\"\n", test_data);
+            sha1(test_data, (unsigned int) data_len, test_key);
+            temp_pkt = encode_packet(test_key, key, DHT_PUT_DATA,
+                                      data_len, test_data);
+            data_len = header_len + data_len;
+            send_all(server_sock, temp_pkt, &data_len);
+            free(temp_pkt);
+            
+          } else if ('a' <= first_char && first_char <= 'i') {
+            // Get and print
+            data_len = strlen((char *) test_data) + 1;
+            test_data[data_len - 2] = first_char - 16;
+            printf("Requesting for \"%s\"\n", test_data);
+            sha1(test_data, (unsigned int) data_len, test_key);
+            temp_pkt = encode_packet(test_key, key, DHT_GET_DATA,
+                                      tcp_len, tcp_addr);
+            data_len = header_len + tcp_len;
+            send_all(server_sock, temp_pkt, &data_len);
+            free(temp_pkt);
+            
+          } else if ('A' <= first_char && first_char <= 'I') {
+            // Drop
+            data_len = strlen((char *) test_data) + 1;
+            test_data[data_len - 2] = first_char - 16;
+            printf("Requesting \"%s\" to be dropped\n", test_data);
+            sha1(test_data, (unsigned int) data_len, test_key);
+            temp_pkt = encode_packet(test_key, key, DHT_DUMP_DATA, 0, NULL);
+            data_len = header_len;
+            send_all(server_sock, temp_pkt, &data_len);
+            free(temp_pkt);
+            
+          } else {
+            printf("Disconnecting...\n");
+            state = DEREGISTERING;
+          }
         }
-        //running = 0;
       }
 
       // Check if incoming data from server
@@ -514,40 +592,110 @@ int main(int argc, const char * argv[])
           destroy_packet(pkt);
 
         } else if (pkt->type == DHT_REGISTER_BEGIN) {
-          node_host = parse_host(pkt->data);
+          node_host = pkt->data + 2;
           node_port = parse_port(pkt->data);
-          printf("Another node has connected {%s, %d} - sending ack\n",
-                  node_host, node_port);
+          printf("New neighbour {%s, %d}\n", node_host, node_port);
           node_sock = create_socket((char *) node_host, node_port);
           // Perform handshake
           handshake(node_sock);
-          
-          // TODO !!!
           // Send the data that is closer to the new node
-          
+          if (datalist != NULL){
+            compare_key1 = pkt->destination;
+            cur_node = datalist;
+            while (cur_node) {
+              compare_key2 = cur_node->packet->destination;
+              if (cur_node->selected == 0 &&
+                    find_closer_key(compare_key2, compare_key1, key) == 1) {
+                // packet in cur_node is closer to the new node
+                temp_pkt = encode_packet(compare_key2, key, DHT_TRANSFER_DATA,
+                                          cur_node->packet->length,
+                                          cur_node->packet->data);
+                data_len = header_len + cur_node->packet->length;
+                send_all(node_sock, temp_pkt, &data_len);
+                free(temp_pkt);
+                cur_node->selected = 1; // Mark to be deleted when all ready
+              }
+              cur_node = cur_node->next;
+            }
+          }
+          // Tell that all was send
           temp_pkt = encode_packet(key, key, DHT_REGISTER_ACK, 0, NULL);
-          send_all(node_sock, temp_pkt, &header_len);
-          free(node_host);
+          data_len = header_len;
+          send_all(node_sock, temp_pkt, &data_len);
           free(temp_pkt);
           destroy_packet(pkt);
-
+        
+        } else if (pkt->type == DHT_REGISTER_DONE) {
+          // Drop the not needed data chuncks that was send for the new node
+          remove_from_list(&datalist);
+          destroy_packet(pkt);
+        
         } else if (pkt->type == DHT_DEREGISTER_ACK) {
-          // Send DEREGISTER_BEGIN to neighbour nodes
-          unsigned char address1[tcp_len + 1];
-          unsigned char address2[tcp_len + 1];
-          memcpy(address1, pkt->data, tcp_len);
-          memcpy(address2, pkt->data + tcp_len, tcp_len);
-          address1[tcp_len] = '\0';
-          address2[tcp_len] = '\0';
+          // Deregistering accepted
+          // Separate the addresses
+          temp_char_array = pkt->data;
+          temp_int = 0;
+          for (int i = 2; i < pkt->length - 2; i++) {
+            if (temp_char_array[i] == '\0') {
+              temp_int = i + 1;
+              break;
+            }
+          }
+          if (temp_int == 0)
+            die("Corrupted addresses received from the server");
+          unsigned int len_addr1 = temp_int - 3;
+          unsigned int len_addr2 = pkt->length - temp_int - 3;
+          unsigned char address1[len_addr1 + 1];
+          unsigned char address2[len_addr2 + 1];
+          memcpy(address1, temp_char_array + 2, len_addr1);
+          memcpy(address2, temp_char_array + 2 + temp_int, len_addr2);
+          address1[len_addr1] = '\0';
+          address2[len_addr2] = '\0';
+          unsigned char neigh1_key[SHA1_DIGEST_LENGTH];
+          unsigned char neigh2_key[SHA1_DIGEST_LENGTH];
+          sha1(temp_char_array, len_addr1 + 2, neigh1_key);
+          sha1(temp_char_array + temp_int, len_addr2 + 2, neigh2_key);
+          // Mark the ones that are for neighbour1 as selected
+          // If both neighbours are the same one, leave everything unselected
+          if (datalist != NULL
+              && strcmp((char *) address1, (char *) address2) != 0){
+            cur_node = datalist;
+            while (cur_node) {
+              compare_key2 = cur_node->packet->destination;
+              if (find_closer_key(compare_key2, neigh1_key, neigh2_key) == 1)
+                cur_node->selected = 1; // This one for the neighbour1
+              cur_node = cur_node->next;
+            }
+          }
+          // For each neighbour, send the respective data and confirm
           unsigned char *addresses[2] = {address1, address2};
           for (int i = 0; i < 2; i++) {
-            node_host = parse_host(addresses[i]);
-            node_port = parse_port(addresses[i]);
+            node_host = addresses[i];
+            node_port = parse_port(temp_char_array + i*temp_int);
             node_sock = create_socket((char *) node_host, node_port);
             handshake(node_sock);
+            // Send the right data packets
+            if (datalist != NULL){
+              cur_node = datalist;
+              while (cur_node) {
+                if ((cur_node->selected == 1 && i == 0)
+                      || (cur_node->selected == 0 && i == 1)) {
+                  temp_pkt = encode_packet(cur_node->packet->destination, key,
+                                            DHT_TRANSFER_DATA,
+                                            cur_node->packet->length,
+                                            cur_node->packet->data);
+                  data_len = header_len + cur_node->packet->length;
+                  send_all(node_sock, temp_pkt, &data_len);
+                  free(temp_pkt);
+                  cur_node->selected = 1; // Mark to be deleted when all ready
+                }
+                cur_node = cur_node->next;
+              }
+            }
+            // Send DEREGISTER_BEGIN to neighbour
             temp_pkt = encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL);
-            send_all(node_sock, temp_pkt, &header_len);
-            free(node_host);
+            data_len = header_len;
+            send_all(node_sock, temp_pkt, &data_len);
             close(node_sock);
             free(temp_pkt);
           }
@@ -556,7 +704,7 @@ int main(int argc, const char * argv[])
         } else if (pkt->type == DHT_DEREGISTER_DENY) {
           // Cancel deregistering
           if (state == DEREGISTERING + 1){
-            printf("Deregistering denied - press CTRL + C to force disconnect\n");
+            printf("Deregistering denied - write 'q' and press ENTER to force disconnect\n");
             state = REGISTERED;
           } else {
             printf("Unexpected packet from server\n");
@@ -568,13 +716,20 @@ int main(int argc, const char * argv[])
           destroy_packet(pkt);
         
         } else if (pkt->type == DHT_PUT_DATA) {
-          // Receive data
+          // Receive data (N.B. no two identical keys should be added)
+          printf("New data packet received\n");
           push_to_list(&datalist, pkt);
           temp_pkt = encode_packet(pkt->destination, pkt->origin,
                                     DHT_PUT_DATA_ACK, 0, NULL);
-          send_all(server_sock, temp_pkt, &header_len);
+          data_len = header_len;
+          send_all(server_sock, temp_pkt, &data_len);
           free(temp_pkt);
-          
+        
+        } else if (pkt->type == DHT_PUT_DATA_ACK) {
+          // Data stored succesfull to the dht
+          printf("Data stored succesfully\n");
+          destroy_packet(pkt);
+        
         } else if (pkt->type == DHT_DUMP_DATA) {
           // Dump data
           if (datalist != NULL){
@@ -593,6 +748,7 @@ int main(int argc, const char * argv[])
                 // Dump node found
                 cur_node->selected = 1;
                 remove_from_list(&datalist);
+                printf("Data dropped in this node\n");
                 break;
               }
               cur_node = cur_node->next;
@@ -600,16 +756,18 @@ int main(int argc, const char * argv[])
           }
           temp_pkt = encode_packet(pkt->destination, pkt->origin,
                                     DHT_DUMP_DATA_ACK, 0, NULL);
-          send_all(server_sock, temp_pkt, &header_len);
+          data_len = header_len;
+          send_all(server_sock, temp_pkt, &data_len);
           free(temp_pkt);
           destroy_packet(pkt);
-          
-        } else if (pkt->type == DHT_REGISTER_DONE) {
-          // Drop the not needed data chuncks that was send for the new node
-          remove_from_list(&datalist);
+        
+        } else if (pkt->type == DHT_DUMP_DATA_ACK) {
+          // Data dropped succesfull
+          printf("Requested data dropped succesfully\n");
           destroy_packet(pkt);
+        
         } else {
-          // Non supported packet received
+          // Other packet received
           destroy_packet(pkt);
         }
       }
@@ -623,23 +781,50 @@ int main(int argc, const char * argv[])
           // Perform handshake with node
           handshake_listener(node_sock);
           // Loop until no incoming data transfer packets
+          temp_int = 0;
           while (1) {
             DHTPacket *pkt = recv_packet(node_sock);
             
             if (pkt->type == DHT_TRANSFER_DATA) {
+              temp_int++;
               push_to_list(&datalist, pkt);
             
             } else if (pkt->type == DHT_REGISTER_ACK) {
+              printf("%d data packets received from a neighbour\n", temp_int);
               state++;
               destroy_packet(pkt);
               break;
             
             } else if (pkt->type == DHT_DEREGISTER_BEGIN) {
               // Send acknowledgement of neighbour deregister to server
+              printf("Neighbour deregistering");
+              if (temp_int)
+                printf(", %d data packets received\n", temp_int);
+              else
+                printf("\n");
               temp_pkt = encode_packet(pkt->origin, key,
                                         DHT_DEREGISTER_DONE, 0, NULL);
-              send_all(server_sock, temp_pkt, &header_len);
+              data_len = header_len;
+              send_all(server_sock, temp_pkt, &data_len);
               free(temp_pkt);
+              destroy_packet(pkt);
+              break;
+            
+            } else if (pkt->type == DHT_SEND_DATA) {
+              // Receiving a requested data packet
+              printf("Requested data packet received\n");
+              // TODO: give the data up
+              
+              // Test dummy
+              printf("Data: \"%s\"\n", pkt->data);
+              
+              destroy_packet(pkt);
+              break;
+            
+            } else if (pkt->type == DHT_NO_DATA) {
+              // Requested data packet not found
+              printf("Requested data packet not found\n");
+              // TODO: inform up
               destroy_packet(pkt);
               break;
             
@@ -657,7 +842,7 @@ int main(int argc, const char * argv[])
 
     if (!state) {
       // Send REGISTER_BEGIN
-      int data_len = header_len + tcp_len;
+      data_len = header_len + tcp_len;
       temp_pkt = encode_packet(key, key, DHT_REGISTER_BEGIN,
                                 tcp_len, tcp_addr);
       send_all(server_sock, temp_pkt, &data_len);
@@ -668,7 +853,8 @@ int main(int argc, const char * argv[])
     if (state == CONNECTED) {
       // Send REGISTER_DONE
       temp_pkt = encode_packet(key, key, DHT_REGISTER_DONE, 0, NULL);
-      send_all(server_sock, temp_pkt, &header_len);
+      data_len = header_len;
+      send_all(server_sock, temp_pkt, &data_len);
       free(temp_pkt);
       state = REGISTERED;
       printf("Registered to server - press [enter] to disconnect\n");
@@ -677,7 +863,8 @@ int main(int argc, const char * argv[])
     if (state == DEREGISTERING) {
       // Send DEREGISTER_BEGIN
       temp_pkt = encode_packet(key, key, DHT_DEREGISTER_BEGIN, 0, NULL);
-      send_all(server_sock, temp_pkt, &header_len);
+      data_len = header_len;
+      send_all(server_sock, temp_pkt, &data_len);
       free(temp_pkt);
       state++;
     }
