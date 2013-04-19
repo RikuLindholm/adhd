@@ -502,8 +502,42 @@ int main(int argc, const char * argv[])
   char break_off;
   int data_len;
   int temp_int, first_char;
+  
+  /* Test keys
+  // SHA1 from "50000 localhost": b9e2f030f9685d8f504931f60bf08a5c1e382545
+  // SHA1 from "50001 localhost": c70984fa4af2a16a9a5489ac1055fa3791355268
+  // SHA1 from "50002 localhost": 52f3d5c7fa258e04ac21bf51928b7cd9b90f9370
+  // SHA1 from "50000 localhost" +1
+  unsigned char test_key1[20] =
+                {0xb9,0xe2,0xf0,0x30,0xf9,0x68,0x5d,0x8f,0x50,0x49,
+                 0x31,0xf6,0x0b,0xf0,0x8a,0x5c,0x1e,0x38,0x25,0x46};
+  // SHA1 from "50001 localhost" +1
+  unsigned char test_key2[20] =
+                {0xc7,0x09,0x84,0xfa,0x4a,0xf2,0xa1,0x6a,0x9a,0x54,
+                 0x89,0xac,0x10,0x55,0xfa,0x37,0x91,0x35,0x52,0x69};
+  // SHA1 from "50002 localhost" +1
+  unsigned char test_key3[20] =
+                {0x52,0xf3,0xd5,0xc7,0xfa,0x25,0x8e,0x04,0xac,0x21,
+                 0xbf,0x51,0x92,0x8b,0x7c,0xd9,0xb9,0x0f,0x93,0x71};
+  // SHA1 from "50000 localhost" -1
+  unsigned char test_key4[20] =
+                {0xb9,0xe2,0xf0,0x30,0xf9,0x68,0x5d,0x8f,0x50,0x49,
+                 0x31,0xf6,0x0b,0xf0,0x8a,0x5c,0x1e,0x38,0x25,0x44};
+  // SHA1 from "50001 localhost" -1
+  unsigned char test_key5[20] =
+                {0xc7,0x09,0x84,0xfa,0x4a,0xf2,0xa1,0x6a,0x9a,0x54,
+                 0x89,0xac,0x10,0x55,0xfa,0x37,0x91,0x35,0x52,0x67};
+  // SHA1 from "50002 localhost" -1
+  unsigned char test_key6[20] =
+                {0x52,0xf3,0xd5,0xc7,0xfa,0x25,0x8e,0x04,0xac,0x21,
+                 0xbf,0x51,0x92,0x8b,0x7c,0xd9,0xb9,0x0f,0x93,0x69};
+  unsigned char *test_keys[6] = {test_key1, test_key2, test_key3,
+                                    test_key4, test_key5, test_key6};
+  // Test keys end */
+  
+  unsigned char test_key[20];
   unsigned char test_data[] = "test_data_x";
-  unsigned char test_key[SHA1_DIGEST_LENGTH];
+  
   
   while (running) {
     socks = master; // Reset socks from master
@@ -521,9 +555,9 @@ int main(int argc, const char * argv[])
         // Utility actions by providing a string with first character as:
         // 'q': force quit
         // 'l': list the current data of the node
-        // '1'-'9': store test_data 1-9
-        // 'a'-'i': get and print the test_data 1-9
-        // 'A'-'I': drop the test_data 1-9
+        // '1'-'6': store test_data 1-6 given above
+        // 'a'-'f': get and print the test_data 1-6
+        // 'A'-'F': drop the test_data 1-6
         first_char = getchar();
         temp_int = first_char;
         while (temp_int != '\n' && temp_int != EOF) temp_int = getchar();
@@ -542,36 +576,39 @@ int main(int argc, const char * argv[])
               }
               printf("----------------\n");
             } else printf("No data in this node\n");
-          } else if ('1' <= first_char && first_char <= '9') {
+          } else if ('1' <= first_char && first_char <= '6') {
             // Store data
             data_len = strlen((char *) test_data) + 1;
             test_data[data_len - 2] = first_char;
             printf("Storing data: \"%s\"\n", test_data);
             sha1(test_data, (unsigned int) data_len, test_key);
+            //test_key = test_keys[first_char - 49];
             temp_pkt = encode_packet(test_key, key, DHT_PUT_DATA,
                                       data_len, test_data);
             data_len = header_len + data_len;
             send_all(server_sock, temp_pkt, &data_len);
             free(temp_pkt);
             
-          } else if ('a' <= first_char && first_char <= 'i') {
+          } else if ('a' <= first_char && first_char <= 'f') {
             // Get and print
             data_len = strlen((char *) test_data) + 1;
-            test_data[data_len - 2] = first_char - 16;
+            test_data[data_len - 2] = first_char - 48;
             printf("Requesting for \"%s\"\n", test_data);
             sha1(test_data, (unsigned int) data_len, test_key);
+            //test_key = test_keys[first_char - 97];
             temp_pkt = encode_packet(test_key, key, DHT_GET_DATA,
                                       tcp_len, tcp_addr);
             data_len = header_len + tcp_len;
             send_all(server_sock, temp_pkt, &data_len);
             free(temp_pkt);
             
-          } else if ('A' <= first_char && first_char <= 'I') {
+          } else if ('A' <= first_char && first_char <= 'F') {
             // Drop
             data_len = strlen((char *) test_data) + 1;
             test_data[data_len - 2] = first_char - 16;
             printf("Requesting \"%s\" to be dropped\n", test_data);
             sha1(test_data, (unsigned int) data_len, test_key);
+            //test_key = test_keys[first_char - 65];
             temp_pkt = encode_packet(test_key, key, DHT_DUMP_DATA, 0, NULL);
             data_len = header_len;
             send_all(server_sock, temp_pkt, &data_len);
@@ -594,11 +631,12 @@ int main(int argc, const char * argv[])
         } else if (pkt->type == DHT_REGISTER_BEGIN) {
           node_host = pkt->data + 2;
           node_port = parse_port(pkt->data);
-          printf("New neighbour {%s, %d}\n", node_host, node_port);
+          printf("New neighbour {%s, %d}", node_host, node_port);
           node_sock = create_socket((char *) node_host, node_port);
           // Perform handshake
           handshake(node_sock);
           // Send the data that is closer to the new node
+          temp_int = 0;
           if (datalist != NULL){
             compare_key1 = pkt->destination;
             cur_node = datalist;
@@ -607,6 +645,7 @@ int main(int argc, const char * argv[])
               if (cur_node->selected == 0 &&
                     find_closer_key(compare_key2, compare_key1, key) == 1) {
                 // packet in cur_node is closer to the new node
+                temp_int++;
                 temp_pkt = encode_packet(compare_key2, key, DHT_TRANSFER_DATA,
                                           cur_node->packet->length,
                                           cur_node->packet->data);
@@ -618,6 +657,9 @@ int main(int argc, const char * argv[])
               cur_node = cur_node->next;
             }
           }
+          if (temp_int)
+            printf(", %d data packets send\n", temp_int);
+          else printf(", no data send\n");
           // Tell that all was send
           temp_pkt = encode_packet(key, key, DHT_REGISTER_ACK, 0, NULL);
           data_len = header_len;
@@ -635,7 +677,7 @@ int main(int argc, const char * argv[])
           // Separate the addresses
           temp_char_array = pkt->data;
           temp_int = 0;
-          for (int i = 2; i < pkt->length - 2; i++) {
+          for (int i = 3; i < pkt->length - 4; i++) {
             if (temp_char_array[i] == '\0') {
               temp_int = i + 1;
               break;
@@ -653,12 +695,12 @@ int main(int argc, const char * argv[])
           address2[len_addr2] = '\0';
           unsigned char neigh1_key[SHA1_DIGEST_LENGTH];
           unsigned char neigh2_key[SHA1_DIGEST_LENGTH];
-          sha1(temp_char_array, len_addr1 + 2, neigh1_key);
-          sha1(temp_char_array + temp_int, len_addr2 + 2, neigh2_key);
+          sha1(temp_char_array, len_addr1 + 3, neigh1_key);
+          sha1(temp_char_array + temp_int, len_addr2 + 3, neigh2_key);          
           // Mark the ones that are for neighbour1 as selected
           // If both neighbours are the same one, leave everything unselected
-          if (datalist != NULL
-              && strcmp((char *) address1, (char *) address2) != 0){
+          if (datalist != NULL && strcmp((char *) temp_char_array,
+               (char *) (temp_char_array + temp_int)) != 0){
             cur_node = datalist;
             while (cur_node) {
               compare_key2 = cur_node->packet->destination;
