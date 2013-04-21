@@ -1,10 +1,14 @@
 /*
  * Java GUI for a DHT Client
  */
-package GUI;
 
 import java.io.File;
+
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
+import javax.swing.JScrollPane;
+
 
 /**
  *
@@ -17,14 +21,93 @@ public class Client_GUI extends javax.swing.JFrame {
      */
     public Client_GUI() {
         initComponents();
-         this.setLocationRelativeTo(null);
+        initUI();
+        this.setLocationRelativeTo(null);
+        
+        
+    }
+    
+    private void initUI() {
+        // First initialize the main window then the dialog window
+        
+        // Main window
+        // Center the main window, set its size and unable resize
+        setLayout(null);
+        setSize(270, 310);
+        setResizable(false);
+        
+        // First button row
+        connectButton.setBounds(10, 10, 120, 40);
+        add(connectButton);
+        disconnectButton.setBounds(140, 10, 120, 40);
+        add(disconnectButton);
+        
+        // Second button row
+        saveFileButton.setBounds(10, 60, 120, 40);
+        add(saveFileButton);
+        loadFileButton.setBounds(140, 60, 120, 40);
+        add(loadFileButton);
+        
+        // Static label
+        raportLabel.setBounds(10, 100, 140, 60);
+        add(raportLabel);
+        
+        // Network & file transfer pane
+        progressPane.setBounds(10, 140, 250, 140);
+        add(progressPane);
+        progressPane.setLayout(null);
+        progressPane.setPreferredSize(progressPane.getSize());
+        progressPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        progressLabel.setBounds(5, 5, 240, 130);
+        progressPane.add(progressLabel);
+        progressPane.repaint();
+        progressLabel.repaint();
+        
+        // Dialog window
+        
+        // Remove layout
+        connectDialog.setLayout(null);
+        
+        // Text labels
+        ownPortLabel.setBounds(10, 10, 100, 20);
+        connectDialog.add(ownPortLabel);
+        
+        ownAddressLabel.setBounds(10, 30, 100, 20);
+        connectDialog.add(ownAddressLabel);
+        
+        serverPortLabel.setBounds(10, 50, 100, 20);
+        connectDialog.add(serverPortLabel);
+        
+        serverAddressLabel.setBounds(10, 70, 100, 20);
+        connectDialog.add(serverAddressLabel);
+        
+        // Text areas
+        ownPortTextField.setBounds(110, 10, 100, 20);
+        connectDialog.add(ownPortTextField);
+        
+        ownAddressTextField.setBounds(110, 30, 100, 20);
+        connectDialog.add(ownAddressTextField);
+        
+        serverPortTextField.setBounds(110, 50, 100, 20);
+        connectDialog.add(serverPortTextField);
+        
+        serverAddressTextField.setBounds(110, 70, 100, 20);
+        connectDialog.add(serverAddressTextField);
+        
+        // Submit & cancel buttons
+        submitButton.setBounds(10, 100, 100, 40);
+        connectDialog.add(submitButton);
+        
+        cancelButton.setBounds(110, 100, 100, 40);
+        connectDialog.add(cancelButton);
+    
     }
 
     /**
      * This method is called from within the constructor to initialize the form.
      * It consists of primary form and a modal dialogue window for network connection
      */
-    @SuppressWarnings("unchecked")
+    //@SuppressWarnings("unchecked")
     
     private void initComponents() {
 
@@ -43,7 +126,7 @@ public class Client_GUI extends javax.swing.JFrame {
         loadFileButton = new javax.swing.JButton();
         saveFileButton = new javax.swing.JButton();
         connectButton = new javax.swing.JButton();
-        jSeparator1 = new javax.swing.JSeparator();
+        separator = new javax.swing.JSeparator();
         raportLabel = new javax.swing.JLabel();
         progressPane = new javax.swing.JScrollPane();
         progressLabel = new javax.swing.JLabel();
@@ -61,7 +144,7 @@ public class Client_GUI extends javax.swing.JFrame {
         // Buttons 5 & 6 are for the connection dialog window    
         
         // Connect to server button
-        connectButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/Icons/connect.png"))); 
+        connectButton.setIcon(new javax.swing.ImageIcon("Icons/connect.png")); 
         connectButton.setText("Connect");
         connectButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -70,7 +153,8 @@ public class Client_GUI extends javax.swing.JFrame {
         });
 
         // Disconnect from server button
-        disconnectButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/Icons/disconnect.png"))); 
+        //Icon imgicon = new ImageIcon("Icons/disconnect.png");
+        disconnectButton.setIcon(new javax.swing.ImageIcon("Icons/disconnect.png")); 
         disconnectButton.setText("Disconnect");
         disconnectButton.setEnabled(false);
         disconnectButton.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -82,7 +166,7 @@ public class Client_GUI extends javax.swing.JFrame {
         // Load file to DHT button
         loadFileButton.setText("Load file from DHT");
         loadFileButton.setEnabled(false);
-        loadFileButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/Icons/download.png")));  
+        loadFileButton.setIcon(new javax.swing.ImageIcon("Icons/download.png"));  
         loadFileButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 loadFileButtonMouseClicked(evt);
@@ -90,7 +174,7 @@ public class Client_GUI extends javax.swing.JFrame {
         });
 
         // Save file to DHT button
-        saveFileButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/Icons/upload.png"))); 
+        saveFileButton.setIcon(new javax.swing.ImageIcon("Icons/upload.png")); 
         saveFileButton.setText("Save file to DHT");
         saveFileButton.setEnabled(false);
         saveFileButton.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -101,10 +185,7 @@ public class Client_GUI extends javax.swing.JFrame {
         
         // Submit network settings button
         submitButton.setText("Submit");
-        submitButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/Icons/submit.png")));
-        submitButton.setMaximumSize(new java.awt.Dimension(84, 38));
-        submitButton.setMinimumSize(new java.awt.Dimension(84, 38));
-        submitButton.setPreferredSize(new java.awt.Dimension(84, 38)); 
+        //submitButton.setIcon(new javax.swing.ImageIcon("Icons/submit.png"));
         submitButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 submitButtonMouseClicked(evt);
@@ -113,7 +194,7 @@ public class Client_GUI extends javax.swing.JFrame {
         
         // Cancel network settings button
         cancelButton.setText("Cancel");
-        cancelButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/Icons/cancel.png")));
+        //cancelButton.setIcon(new javax.swing.ImageIcon("Icons/cancel.png"));
         cancelButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 cancelButtonMouseClicked(evt);
@@ -134,124 +215,18 @@ public class Client_GUI extends javax.swing.JFrame {
         // Text for report label
         raportLabel.setText("Progress information:");
 
-        // Initial text for progress terminal & allignement to top
+        // Initial text for progress terminal & alignment to top
         progressLabel.setText("<html><body>Waiting for connection...<br>");
         progressLabel.setVerticalAlignment(javax.swing.SwingConstants.TOP);
         progressPane.setViewportView(progressLabel);
 
-        // Set layout for the main form & dialog window
-        org.jdesktop.layout.GroupLayout connectDialogLayout = new org.jdesktop.layout.GroupLayout(connectDialog.getContentPane());
-        connectDialog.getContentPane().setLayout(connectDialogLayout);
-        connectDialogLayout.setHorizontalGroup(
-            connectDialogLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(connectDialogLayout.createSequentialGroup()
-                .add(connectDialogLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(connectDialogLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(connectDialogLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(serverAddressLabel)
-                            .add(serverPortLabel)
-                            .add(ownAddressLabel)
-                            .add(ownPortLabel))
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-                        .add(connectDialogLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                            .add(ownAddressTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 127, Short.MAX_VALUE)
-                            .add(connectDialogLayout.createSequentialGroup()
-                                .add(3, 3, 3)
-                                .add(serverPortTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 50, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                            .add(ownPortTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 50, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(serverAddressTextField)))
-                    .add(connectDialogLayout.createSequentialGroup()
-                        .add(45, 45, 45)
-                        .add(submitButton, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(cancelButton)))
-                .addContainerGap(36, Short.MAX_VALUE))
-        );
-        connectDialogLayout.setVerticalGroup(
-            connectDialogLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(connectDialogLayout.createSequentialGroup()
-                .addContainerGap()
-                .add(connectDialogLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(ownPortLabel)
-                    .add(ownPortTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(connectDialogLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(ownAddressLabel)
-                    .add(ownAddressTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(connectDialogLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(serverPortTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(serverPortLabel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 16, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(connectDialogLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(serverAddressLabel)
-                    .add(serverAddressTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .add(18, 18, 18)
-                .add(connectDialogLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(submitButton, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(cancelButton))
-                .addContainerGap(25, Short.MAX_VALUE))
-        );
-    
-        org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
-                .addContainerGap()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(layout.createSequentialGroup()
-                        .add(6, 6, 6)
-                        .add(raportLabel)
-                        .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .add(layout.createSequentialGroup()
-                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jSeparator1)
-                            .add(org.jdesktop.layout.GroupLayout.TRAILING, progressPane)
-                            .add(layout.createSequentialGroup()
-                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                    .add(layout.createSequentialGroup()
-                                        .add(connectButton)
-                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                        .add(disconnectButton))
-                                    .add(layout.createSequentialGroup()
-                                        .add(saveFileButton)
-                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                        .add(loadFileButton)))
-                                .add(0, 61, Short.MAX_VALUE)))
-                        .addContainerGap())))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
-                .addContainerGap()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(connectButton)
-                    .add(disconnectButton))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jSeparator1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(loadFileButton)
-                    .add(saveFileButton))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-                .add(raportLabel)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-                .add(progressPane, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 135, Short.MAX_VALUE)
-                .addContainerGap())
-        );
-
         pack();
     }
-
-    
-    
-
-    // Coonect to network button click event handler
+  
+    // Connect to network button click event handler
     private void connectButtonMouseClicked(java.awt.event.MouseEvent evt) {
-        if (evt.getSource() == connectButton) {
-             connectDialog.setLocationRelativeTo(null);
+        if ((evt.getSource() == connectButton) && (connectButton.isEnabled() == true)) {
+            connectDialog.setLocationRelativeTo(null);
             connectDialog.setVisible(true);
         } 
     }
@@ -271,7 +246,7 @@ public class Client_GUI extends javax.swing.JFrame {
         //Create a file chooser
         final JFileChooser fc = new JFileChooser();
         //In response to a button click:
-        if (evt.getSource() == saveFileButton) {
+        if ((evt.getSource() == saveFileButton) && (saveFileButton.isEnabled() == true)) {
             int returnVal = fc.showOpenDialog(Client_GUI.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File file = fc.getSelectedFile();
@@ -283,7 +258,6 @@ public class Client_GUI extends javax.swing.JFrame {
     }
 
    
-
     private void loadFileButtonMouseClicked(java.awt.event.MouseEvent evt) {
          /*
          *   TO-DO Load file button click event handler 
@@ -319,36 +293,13 @@ public class Client_GUI extends javax.swing.JFrame {
             progressLabel.setText(progressLabel.getText() + "Connection failed.<br>");
         }
     }
-
-    
-
     
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Client_GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Client_GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Client_GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(Client_GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
         
-        
-        /* Create and display the form */
+        /* Create the DHT Client GUI and display the main window  */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new Client_GUI().setVisible(true);
@@ -365,7 +316,7 @@ public class Client_GUI extends javax.swing.JFrame {
     private javax.swing.JButton connectButton;
     private javax.swing.JDialog connectDialog;
     private javax.swing.JButton disconnectButton;
-    private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JSeparator separator;
     private javax.swing.JButton loadFileButton;
     private javax.swing.JLabel ownAddressLabel;
     private javax.swing.JTextField ownAddressTextField;
