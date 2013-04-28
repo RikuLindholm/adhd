@@ -4,8 +4,11 @@
 
 package gui;
 
-import java.io.File;
 import java.net.URL;
+import java.net.Socket;
+import java.io.*;
+import java.lang.String;
+import java.awt.event.*;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -18,18 +21,69 @@ import gui.IconButton;
  *
  * @author Jerome Saarinen
  */
-public class GUI extends javax.swing.JFrame {
+
+// Define GUI message types
+
+public class GUI extends javax.swing.JFrame implements java.awt.event.WindowListener {
+
+    public static final int UI_CONNECT = 1;
+    public static final int UI_DISCONNECT = 2;
 
     /**
      * Creates new form Client_GUI and centers it to the screen
      */
     public GUI() {
-        initComponents();
-        initUI();
-        this.setLocationRelativeTo(null);
+      this.sendMessage(UI_CONNECT);
+      addWindowListener(this);
+      this.initComponents();
+      this.render();
+      this.setLocationRelativeTo(null);
     }
-    
-    private void initUI() {
+
+    public void windowClosing(WindowEvent e) {
+      System.out.println("Window closing");
+      this.sendMessage(UI_DISCONNECT);
+    }
+
+    public void windowClosed(WindowEvent e) {
+        //This will only be seen on standard output.
+        System.out.println("WindowListener method called: windowClosed.");
+    }
+
+    public void windowOpened(WindowEvent e) {
+        System.out.println("WindowListener method called: windowOpened.");
+    }
+
+    public void windowIconified(WindowEvent e) {
+        System.out.println("WindowListener method called: windowIconified.");
+    }
+
+    public void windowDeiconified(WindowEvent e) {
+        System.out.println("WindowListener method called: windowDeiconified.");
+    }
+
+    public void windowActivated(WindowEvent e) {
+        System.out.println("WindowListener method called: windowActivated.");
+    }
+
+    public void windowDeactivated(WindowEvent e) {
+        System.out.println("WindowListener method called: windowDeactivated.");
+    }
+
+    private void sendMessage(int type) {
+      try {
+        sock = new Socket("127.0.0.1", 52000);
+        out = sock.getOutputStream();
+        message = Integer.toString(type).toCharArray();
+        out.write(message[0]);
+        out.close();
+        sock.close();
+      } catch (IOException err) {
+        System.err.println(err);
+      }
+    }
+
+    private void render() {
         // First initialize the main window then the dialog window
         
         // Main window
@@ -273,7 +327,7 @@ public class GUI extends javax.swing.JFrame {
             loadFileButton.setEnabled(true);
             
             // Report connection info
-            // TODO: Send connection information and command to C app
+            // Todo: send file message
             progressLabel.setText(progressLabel.getText() + "--- CONNECTION SUCCESSFUL --- <br> Waiting for files...<br>"); 
         }
     }
@@ -322,5 +376,8 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JTextField serverAddressTextField;
     private javax.swing.JLabel serverPortLabel;
     private javax.swing.JTextField serverPortTextField;
-    
+
+    Socket sock;
+    OutputStream out;
+    char[] message;
 }
