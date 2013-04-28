@@ -2,13 +2,19 @@ CFLAGS=-c -g -Wall -Werror -std=c99 -pedantic
 LDFLAGS=-lcrypto
 CC = gcc
 LD = gcc
+JCC = javac
 OBJS = dhtnode.o dhtpacket.o
 PROG = dhtnode
+JOBJS = gui/IconButton.java gui/GUI.java
 
 .c.o:
 	gcc $< -o $@ $(CFLAGS)
 
 all: $(PROG)
+
+gui: $(JOBJS)
+	$(JCC) $(JOBJS)
+	java gui.GUI
 
 $(PROG): $(OBJS)
 	$(LD) $(OBJS) -o $(PROG) $(LDFLAGS)
