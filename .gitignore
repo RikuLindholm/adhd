@@ -1,4 +1,5 @@
 *.o
+*.class
 main
 dhtnode
 .DS_Store

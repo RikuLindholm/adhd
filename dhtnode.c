@@ -469,9 +469,11 @@ int main(int argc, const char * argv[])
 
   // Create sockets
   int server_sock = create_socket((char *) argv[1], atoi(argv[2]));
+  int ui_listener = create_listen_socket(52000);
   int node_listener = create_listen_socket(atoi(argv[4]));
   int node_sock; // Holder for incoming node sockets
   int manager_sock = 0; // Holder for incoming node sockets
+  int ui_sock;
 
   //printf("Setting timeout values");
   // Set read timeout to zero
@@ -483,6 +485,7 @@ int main(int argc, const char * argv[])
 	FD_SET(STDIN, &master); // Add standard input to master set
 	FD_SET(server_sock, &master); // Add server sock master set
 	FD_SET(node_listener, &master); // Add server listener to master set
+	FD_SET(ui_listener, &master); // Add UI listener to master set
 
   // Perform initial handshake with server
   if (handshake(server_sock) == 0)
@@ -537,9 +540,9 @@ int main(int argc, const char * argv[])
 
     // Count sockets with incoming data
     if (state == REGISTERED)
-      retval = select(node_listener + 1, &socks, NULL, NULL, NULL);
+      retval = select(ui_listener + 1, &socks, NULL, NULL, NULL);
     else
-      retval = select(node_listener + 1, &socks, NULL, NULL, &tv);
+      retval = select(ui_listener + 1, &socks, NULL, NULL, &tv);
 
     // Socket data handler
     if (retval) {
@@ -985,6 +988,16 @@ int main(int argc, const char * argv[])
           free(temp_pkt);
         }
         destroy_packet(pkt);
+      }
+
+      // Check incoming data from UI
+      if (FD_ISSET(ui_listener, &socks)) {
+        printf("Message from UI\n");
+        ui_sock = accept(ui_listener, NULL, NULL);
+        unsigned char* message = recv_all(ui_sock, 1);
+        printf("Got message type: %s\n", message);
+        free(message);
+        close(ui_sock);
       }
     }
 
