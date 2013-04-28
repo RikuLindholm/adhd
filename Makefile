@@ -5,7 +5,8 @@ LD = gcc
 JCC = javac
 OBJS = dhtnode.o dhtpacket.o
 PROG = dhtnode
-JOBJS = gui/IconButton.java gui/GUI.java
+JOBJS = gui/IconButton.class gui/GUI.class
+JPROG = gui/GUI.java
 
 .c.o:
 	gcc $< -o $@ $(CFLAGS)
@@ -13,7 +14,7 @@ JOBJS = gui/IconButton.java gui/GUI.java
 all: $(PROG)
 
 gui: $(JOBJS)
-	$(JCC) $(JOBJS)
+	$(JCC) $(JPROG)
 	java gui.GUI
 
 $(PROG): $(OBJS)
@@ -25,8 +26,17 @@ dhtnode.o: dhtnode.c dhtpacket.c dhtpackettypes.h connectionstates.h
 dhtpacket.o: dhtpacket.c
 	$(CC) $(CFLAGS) dhtpacket.c
 
+gui/IconButton.class: gui/IconButton.java
+	$(JCC) gui/IconButton.java
+
+gui/GUI.class: gui/GUI.java
+	$(JCC) gui/GUI.java
+
 clean:
-	/bin/rm -f *.o dhtnode
+	/bin/rm -f *.o dhtnode gui/*.class
 
 run:
 	./$(PROG) 127.0.0.1 3200 127.0.0.1 50000
+
+run-gui:
+	java gui.GUI

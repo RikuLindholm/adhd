@@ -31,3 +31,7 @@ Note that the server needs to be running for proper functionality.
 The project includes a Java GUI for storing and fetching files from the DHT. To compile and run the GUI, simply run:
 
     make gui
+
+Or if you simply want to run the GUI without recompiling:
+
+    make run-gui
