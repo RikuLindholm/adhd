@@ -2,29 +2,31 @@
  * Java GUI for a DHT Client
  */
 
+package gui;
+
 import java.io.File;
+import java.net.URL;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JScrollPane;
 
+import gui.IconButton;
 
 /**
  *
  * @author Jerome Saarinen
  */
-public class Client_GUI extends javax.swing.JFrame {
+public class GUI extends javax.swing.JFrame {
 
     /**
      * Creates new form Client_GUI and centers it to the screen
      */
-    public Client_GUI() {
+    public GUI() {
         initComponents();
         initUI();
         this.setLocationRelativeTo(null);
-        
-        
     }
     
     private void initUI() {
@@ -111,7 +113,18 @@ public class Client_GUI extends javax.swing.JFrame {
     
     private void initComponents() {
 
+        // Add title for the GUI
+        setTitle("DHT Client");
+
         // Create the GUI component variables
+
+        connectButton = new IconButton("Connect", "icons/connect.png");
+        disconnectButton = new IconButton("Disconnect", "icons/disconnect.png");
+        submitButton = new IconButton("Submit", null); // "icons/submit.png"
+        cancelButton = new IconButton("Cancel", null); //"icons/cancel.png"
+        loadFileButton = new IconButton("Load File from DHT", "icons/download.png");
+        saveFileButton = new IconButton("Save file to DHT", "icons/upload.png");
+
         connectDialog = new javax.swing.JDialog();
         ownPortLabel = new javax.swing.JLabel();
         ownAddressLabel = new javax.swing.JLabel();
@@ -121,31 +134,19 @@ public class Client_GUI extends javax.swing.JFrame {
         ownAddressTextField = new javax.swing.JTextField();
         serverPortTextField = new javax.swing.JTextField();
         serverAddressTextField = new javax.swing.JTextField();
-        submitButton = new javax.swing.JButton();
-        cancelButton = new javax.swing.JButton();
-        loadFileButton = new javax.swing.JButton();
-        saveFileButton = new javax.swing.JButton();
-        connectButton = new javax.swing.JButton();
         separator = new javax.swing.JSeparator();
         raportLabel = new javax.swing.JLabel();
         progressPane = new javax.swing.JScrollPane();
         progressLabel = new javax.swing.JLabel();
-        disconnectButton = new javax.swing.JButton();
 
          // Add default window close operation 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        
-        // Add title for the GUI
-        setTitle("DHT Client");
-
 
         // Set texts, icons, dimensions and event listeners for buttons    
         // First 4 buttons are for the main window 
         // Buttons 5 & 6 are for the connection dialog window    
         
         // Connect to server button
-        connectButton.setIcon(new javax.swing.ImageIcon("Icons/connect.png")); 
-        connectButton.setText("Connect");
         connectButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 connectButtonMouseClicked(evt);
@@ -153,9 +154,7 @@ public class Client_GUI extends javax.swing.JFrame {
         });
 
         // Disconnect from server button
-        //Icon imgicon = new ImageIcon("Icons/disconnect.png");
-        disconnectButton.setIcon(new javax.swing.ImageIcon("Icons/disconnect.png")); 
-        disconnectButton.setText("Disconnect");
+        //Icon imgicon = new ImageIcon("icons/disconnect.png");
         disconnectButton.setEnabled(false);
         disconnectButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -164,9 +163,7 @@ public class Client_GUI extends javax.swing.JFrame {
         });
 
         // Load file to DHT button
-        loadFileButton.setText("Load file from DHT");
-        loadFileButton.setEnabled(false);
-        loadFileButton.setIcon(new javax.swing.ImageIcon("Icons/download.png"));  
+        loadFileButton.setEnabled(false);  
         loadFileButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 loadFileButtonMouseClicked(evt);
@@ -174,8 +171,6 @@ public class Client_GUI extends javax.swing.JFrame {
         });
 
         // Save file to DHT button
-        saveFileButton.setIcon(new javax.swing.ImageIcon("Icons/upload.png")); 
-        saveFileButton.setText("Save file to DHT");
         saveFileButton.setEnabled(false);
         saveFileButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -184,8 +179,6 @@ public class Client_GUI extends javax.swing.JFrame {
         });
         
         // Submit network settings button
-        submitButton.setText("Submit");
-        //submitButton.setIcon(new javax.swing.ImageIcon("Icons/submit.png"));
         submitButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 submitButtonMouseClicked(evt);
@@ -193,8 +186,6 @@ public class Client_GUI extends javax.swing.JFrame {
         });
         
         // Cancel network settings button
-        cancelButton.setText("Cancel");
-        //cancelButton.setIcon(new javax.swing.ImageIcon("Icons/cancel.png"));
         cancelButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 cancelButtonMouseClicked(evt);
@@ -228,7 +219,7 @@ public class Client_GUI extends javax.swing.JFrame {
         if ((evt.getSource() == connectButton) && (connectButton.isEnabled() == true)) {
             connectDialog.setLocationRelativeTo(null);
             connectDialog.setVisible(true);
-        } 
+        }
     }
 
     // Disconnect button click event handler
@@ -247,7 +238,7 @@ public class Client_GUI extends javax.swing.JFrame {
         final JFileChooser fc = new JFileChooser();
         //In response to a button click:
         if ((evt.getSource() == saveFileButton) && (saveFileButton.isEnabled() == true)) {
-            int returnVal = fc.showOpenDialog(Client_GUI.this);
+            int returnVal = fc.showOpenDialog(GUI.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File file = fc.getSelectedFile();
                 progressLabel.setText(progressLabel.getText()+ "\n" +"Saved file " + file.getName()+".<br>");
@@ -282,7 +273,8 @@ public class Client_GUI extends javax.swing.JFrame {
             loadFileButton.setEnabled(true);
             
             // Report connection info
-            progressLabel.setText(progressLabel.getText()+"--- CONNECTION SUCCESSFUL --- <br> Waiting for files...<br>");    
+            // TODO: Send connection information and command to C app
+            progressLabel.setText(progressLabel.getText() + "--- CONNECTION SUCCESSFUL --- <br> Waiting for files...<br>"); 
         }
     }
 
@@ -298,26 +290,27 @@ public class Client_GUI extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        
         /* Create the DHT Client GUI and display the main window  */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Client_GUI().setVisible(true);
-               
+                new GUI().setVisible(true);
             }
         });
     }
+
     //Variables
     public String myPort;
     public String myAddress;
     public String serverPort;
     public String serverAddress;
-    private javax.swing.JButton cancelButton;
-    private javax.swing.JButton connectButton;
+    private IconButton connectButton;
+    private IconButton disconnectButton;
+    private IconButton loadFileButton;
+    private IconButton saveFileButton;
+    private IconButton submitButton;
+    private IconButton cancelButton;
     private javax.swing.JDialog connectDialog;
-    private javax.swing.JButton disconnectButton;
     private javax.swing.JSeparator separator;
-    private javax.swing.JButton loadFileButton;
     private javax.swing.JLabel ownAddressLabel;
     private javax.swing.JTextField ownAddressTextField;
     private javax.swing.JLabel ownPortLabel;
@@ -325,11 +318,9 @@ public class Client_GUI extends javax.swing.JFrame {
     private javax.swing.JLabel progressLabel;
     private javax.swing.JScrollPane progressPane;
     private javax.swing.JLabel raportLabel;
-    private javax.swing.JButton saveFileButton;
     private javax.swing.JLabel serverAddressLabel;
     private javax.swing.JTextField serverAddressTextField;
     private javax.swing.JLabel serverPortLabel;
     private javax.swing.JTextField serverPortTextField;
-    private javax.swing.JButton submitButton;
     
 }
