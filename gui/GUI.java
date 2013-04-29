@@ -192,37 +192,37 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
 
       // Connect to server button
       connectButton.addMouseListener(new java.awt.event.MouseAdapter() {
-          public void mouseClicked(java.awt.event.MouseEvent evt) {
-            if (connectButton.isEnabled()) connectDialog.showDialog();
-          }
+        public void mouseClicked(java.awt.event.MouseEvent evt) {
+          if (connectButton.isEnabled()) connectDialog.showDialog();
+        }
       });
 
       // Disconnect from server button
       disconnectButton.addMouseListener(new java.awt.event.MouseAdapter() {
-          public void mouseClicked(java.awt.event.MouseEvent evt) {
-            if (disconnectButton.isEnabled()) disconnect();
-          }
+        public void mouseClicked(java.awt.event.MouseEvent evt) {
+          if (disconnectButton.isEnabled()) disconnect();
+        }
       });
 
       // Load file to DHT button
       loadFileButton.addMouseListener(new java.awt.event.MouseAdapter() {
-          public void mouseClicked(java.awt.event.MouseEvent evt) {
-            loadFileButtonMouseClicked(evt);
-          }
+        public void mouseClicked(java.awt.event.MouseEvent evt) {
+          loadFileButtonMouseClicked(evt);
+        }
       });
 
       // Save file to DHT button
       saveFileButton.addMouseListener(new java.awt.event.MouseAdapter() {
-          public void mouseClicked(java.awt.event.MouseEvent evt) {
-            saveFileButtonMouseClicked(evt);
-          }
+        public void mouseClicked(java.awt.event.MouseEvent evt) {
+          saveFileButtonMouseClicked(evt);
+        }
       });
     }
 
     // Connect to network button click event handler
     private void connectButtonMouseClicked(java.awt.event.MouseEvent evt) {
         if ((evt.getSource() == connectButton) && (connectButton.isEnabled() == true)) {
-            connectDialog.showDialog();
+          connectDialog.showDialog();
         }
     }
 
@@ -231,21 +231,37 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
         //Create a file chooser
         final JFileChooser fc = new JFileChooser();
         //In response to a button click:
-        if ((evt.getSource() == saveFileButton) && (saveFileButton.isEnabled() == true)) {
+        if ((evt.getSource() == saveFileButton) && saveFileButton.isEnabled()) {
             int returnVal = fc.showOpenDialog(GUI.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
-                File file = fc.getSelectedFile();
-                progressLabel.setText(progressLabel.getText()+ "\n" +"Saved file " + file.getName()+".<br>");
+              File file = fc.getSelectedFile();
+              connection.sendMessage(gui.MessageTypes.UPLOAD, file.getAbsolutePath());
+              progressLabel.setText(progressLabel.getText()+ "\n" +"Saved file " + file.getName()+".<br>");
             } else {
-                progressLabel.setText(progressLabel.getText() + "File save failed.<br>");
+              progressLabel.setText(progressLabel.getText() + "File save failed.<br>");
             }
         }
     }
    
     private void loadFileButtonMouseClicked(java.awt.event.MouseEvent evt) {
-       /*
-       *   TO-DO Load file button click event handler 
-       */
+      if (loadFileButton.isEnabled()) {
+        connection.sendMessage(gui.MessageTypes.UPLOAD, "haproxy.cfg");
+        String fileName = (String) JOptionPane.showInputDialog(
+                            this,
+                            "Type in the file name to fetch:\n",
+                            "Customized Dialog",
+                            JOptionPane.PLAIN_MESSAGE,
+                            null,
+                            null,
+                            null);
+
+        //If a string was returned, say so.
+        if ((fileName != null) && (fileName.length() > 0)) {
+          connection.sendMessage(gui.MessageTypes.DOWNLOAD, fileName);
+          progressLabel.setText(progressLabel.getText() + "\n" +"Downloaded file " + fileName + ".<br>");
+          return;
+        }
+      }
     }
     
     /**
@@ -254,9 +270,9 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
     public static void main(String args[]) {
         /* Create the DHT Client GUI and display the main window  */
         java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new GUI().setVisible(true);
-            }
+          public void run() {
+              new GUI().setVisible(true);
+          }
         });
     }
 }
