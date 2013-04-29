@@ -235,8 +235,21 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
             int returnVal = fc.showOpenDialog(GUI.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
               File file = fc.getSelectedFile();
+              byte[] fileData;
+
+              // Read file into memory
+              try {
+                fileData = new byte[(int) file.length()];
+                System.out.println("File length: " + fileData.length);
+                DataInputStream stream = new DataInputStream(new FileInputStream(file));
+                stream.readFully(fileData);
+                stream.close();
+              } catch (IOException err) {
+                System.err.println(err);
+              }
+
+              // TODO: create and send an upload packet with file data
               connection.sendMessage(gui.MessageTypes.UPLOAD, file.getAbsolutePath());
-              progressLabel.setText(progressLabel.getText()+ "\n" +"Saved file " + file.getName()+".<br>");
             }
         }
     }
@@ -255,6 +268,7 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
         //If a string was returned, say so.
         if ((fileName != null) && (fileName.length() > 0)) {
           connection.sendMessage(gui.MessageTypes.DOWNLOAD, fileName);
+          
           progressLabel.setText(progressLabel.getText() + "\n" +"Downloaded file " + fileName + ".<br>");
         }
       }
