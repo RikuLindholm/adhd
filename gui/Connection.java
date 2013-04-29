@@ -19,7 +19,7 @@ public class Connection {
 
   public void connect() {
     try {
-      sock = new Socket("127.0.0.1", 52000);
+      sock = new Socket(this.host, this.port);
       out = sock.getOutputStream();
     } catch (IOException err) {
       System.err.println(err);

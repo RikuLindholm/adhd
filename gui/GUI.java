@@ -115,13 +115,13 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
         setTitle("DHT Client");
 
         // Create the GUI component variables
+        connectDialog = new ConnectDialog();
 
         connectButton = new IconButton("Connect", "icons/connect.png");
         disconnectButton = new IconButton("Disconnect", "icons/disconnect.png");
         loadFileButton = new IconButton("Load File from DHT", "icons/download.png");
         saveFileButton = new IconButton("Save file to DHT", "icons/upload.png");
 
-        connectDialog = new ConnectDialog();
         separator = new javax.swing.JSeparator();
         raportLabel = new javax.swing.JLabel();
         progressPane = new javax.swing.JScrollPane();
@@ -133,10 +133,10 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
         // Set texts, icons, dimensions and event listeners for buttons    
         // First 4 buttons are for the main window 
         // Buttons 5 & 6 are for the connection dialog window    
-        loadFileButton.setEnabled(false); 
-        saveFileButton.setEnabled(false);
+        loadFileButton.disable(); 
+        saveFileButton.disable();
         //Icon imgicon = new ImageIcon("icons/disconnect.png");
-        disconnectButton.setEnabled(false);
+        disconnectButton.disable();
         
         // Text for report label
         raportLabel.setText("Progress information:");
@@ -148,22 +148,22 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
     }
 
     private void connect() {
-      this.connection.sendMessage(gui.MessageTypes.CONNECT, "127.0.0.1");
-      disconnectButton.setEnabled(true);
-      connectButton.setEnabled(false);
-      saveFileButton.setEnabled(true);
-      loadFileButton.setEnabled(true);
+      this.connection.sendMessage(gui.MessageTypes.CONNECT, null);
+      disconnectButton.enable();
+      connectButton.disable();
+      saveFileButton.enable();
+      loadFileButton.enable();
 
       // Report connection info
       progressLabel.setText(progressLabel.getText() + "--- CONNECTION SUCCESSFUL --- <br> Waiting for files...<br>");
     }
 
     private void disconnect() {
-      this.connection.sendMessage(gui.MessageTypes.DISCONNECT, "127.0.0.1");
-      disconnectButton.setEnabled(false);
-      connectButton.setEnabled(true);
-      saveFileButton.setEnabled(false);
-      loadFileButton.setEnabled(false);
+      this.connection.sendMessage(gui.MessageTypes.DISCONNECT, null);
+      disconnectButton.disable();
+      connectButton.enable();
+      saveFileButton.disable();
+      loadFileButton.disable();
 
       // Report connection info
       progressLabel.setText(progressLabel.getText() + "--- DISCONNECTION SUCCESSFUL ---<br> Waiting for connection...<br>");
@@ -237,15 +237,12 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
               File file = fc.getSelectedFile();
               connection.sendMessage(gui.MessageTypes.UPLOAD, file.getAbsolutePath());
               progressLabel.setText(progressLabel.getText()+ "\n" +"Saved file " + file.getName()+".<br>");
-            } else {
-              progressLabel.setText(progressLabel.getText() + "File save failed.<br>");
             }
         }
     }
    
     private void loadFileButtonMouseClicked(java.awt.event.MouseEvent evt) {
       if (loadFileButton.isEnabled()) {
-        connection.sendMessage(gui.MessageTypes.UPLOAD, "haproxy.cfg");
         String fileName = (String) JOptionPane.showInputDialog(
                             this,
                             "Type in the file name to fetch:\n",
@@ -259,7 +256,6 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
         if ((fileName != null) && (fileName.length() > 0)) {
           connection.sendMessage(gui.MessageTypes.DOWNLOAD, fileName);
           progressLabel.setText(progressLabel.getText() + "\n" +"Downloaded file " + fileName + ".<br>");
-          return;
         }
       }
     }
