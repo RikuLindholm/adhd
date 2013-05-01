@@ -2,15 +2,14 @@ package gui;
 
 import java.net.*;
 import java.io.*;
-
-import gui.MessageTypes;
+import gui.FileMessage;
 
 public class Connection {
 
-  Socket sock;
-  OutputStream out;
-  String host;
-  int port;
+  private Socket sock;
+  private OutputStream out;
+  public String host;
+  public int port;
 
   public Connection() {
     this.host = "127.0.0.1";
@@ -19,8 +18,8 @@ public class Connection {
 
   public void connect() {
     try {
-      sock = new Socket(this.host, this.port);
-      out = sock.getOutputStream();
+      this.sock = new Socket(this.host, this.port);
+      this.out = sock.getOutputStream();
     } catch (IOException err) {
       System.err.println(err);
     }
@@ -28,23 +27,20 @@ public class Connection {
 
   public void disconnect() {
     try {
-      out.close();
-      sock.close();
+      this.out.close();
+      this.sock.close();
     } catch (IOException err) {
       System.err.println(err);
     }
   }
 
-  public void sendMessage(int type, String data) {
-    connect();
+  public void sendMessage(byte[] message) {
     try {
-      char[] message = Integer.toString(type).toCharArray();
-      out.write(message[0]);
-      out.flush();
+      System.out.println(message);
+      this.out.write(message);
+      this.out.flush();
     } catch (IOException err) {
       System.err.println(err);
     }
-    disconnect();
   }
-
 }

@@ -5,7 +5,7 @@ LD = gcc
 JCC = javac
 OBJS = dhtnode.o dhtpacket.o
 PROG = dhtnode
-JOBJS = gui/IconButton.class gui/MessageTypes.class gui/Connection.class gui/ConnectDialog.class gui/GUI.class
+JOBJS = gui/IconButton.class gui/Connection.class gui/FileMessage.class gui/GUI.class
 JPROG = gui/GUI.java
 
 .c.o:
@@ -14,7 +14,6 @@ JPROG = gui/GUI.java
 all: $(PROG)
 
 gui: $(JOBJS)
-	$(JCC) $(JPROG)
 	java gui.GUI
 
 $(PROG): $(OBJS)
@@ -26,17 +25,17 @@ dhtnode.o: dhtnode.c dhtpacket.c dhtpackettypes.h connectionstates.h
 dhtpacket.o: dhtpacket.c
 	$(CC) $(CFLAGS) dhtpacket.c
 
+gui/GUI.class: gui/GUI.java
+	$(JCC) $(JPROG)
+
 gui/IconButton.class: gui/IconButton.java
 	$(JCC) gui/IconButton.java
-
-gui/GUI.class: gui/GUI.java
-	$(JCC) gui/GUI.java
 
 gui/ConnectDialog.class: gui/ConnectDialog.java
 	$(JCC) gui/ConnectDialog.java
 
-gui/MessageTypes.class: gui/MessageTypes.java
-	$(JCC) gui/MessageTypes.java
+gui/FileMessage.class: gui/FileMessage.java
+	$(JCC) gui/FileMessage.java
 
 gui/Connection.class: gui/Connection.java
 	$(JCC) gui/Connection.java
