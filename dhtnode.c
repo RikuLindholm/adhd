@@ -40,8 +40,6 @@
 
 static const unsigned short DHT_SERVER_SHAKE = 0x413f;
 static const unsigned short DHT_CLIENT_SHAKE = 0x4121;
-// Handshake for manager
-static const unsigned short DHT_MANAGE_SHAKE = 0x516a;
 
 typedef struct list_node {
     DHTPacket *packet;
@@ -326,8 +324,6 @@ int handshake_listener(int sock)
   int ret;
   if (s_shake == DHT_CLIENT_SHAKE)
     ret = 1;
-  else if (s_shake == DHT_MANAGE_SHAKE)
-    ret = 2;
   else {
     //printf("Invalid handshake\n");
     ret = 0;
@@ -471,9 +467,9 @@ int main(int argc, const char * argv[])
   // Create sockets
   int server_sock = create_socket((char *) argv[1], atoi(argv[2]));
   int node_listener = create_listen_socket(atoi(argv[4]));
-  int node_sock; // Holder for incoming node sockets
   int ui_listener = create_listen_socket(52000);
-  int manager_sock = 0;
+  int node_sock; // Holder for incoming node sockets
+  int ui_sock;
   int greatest_sock = ui_listener;
 
   //printf("Setting timeout values");
@@ -790,13 +786,13 @@ int main(int argc, const char * argv[])
             // The requesting node is the same as this one
             if (temp_int) {
               // Send the data
-              if (manager_sock) {
+              if (ui_sock) {
                 printf("Requested data packet found in this node\n");
                 // Send the data up to the manager
                 temp_pkt = encode_packet(pkt2->destination, key, DHT_SEND_DATA,
                                         pkt2->length, pkt2->data);
                 data_len = header_len + pkt2->length;
-                send_all(manager_sock, temp_pkt, &data_len);
+                send_all(ui_sock, temp_pkt, &data_len);
                 free(temp_pkt);
               } else if ('a' <= first_char && first_char <= 'f') {
                 // Test utility printing
@@ -806,11 +802,11 @@ int main(int argc, const char * argv[])
             } else {
               // Send no_data
               printf("Requested data packet not found\n");
-              if (manager_sock) {
+              if (ui_sock) {
                 // Send the data up to the manager
                 temp_pkt = encode_packet(key, key, DHT_NO_DATA, 0, NULL);
                 data_len = header_len;
-                send_all(manager_sock, temp_pkt, &data_len);
+                send_all(ui_sock, temp_pkt, &data_len);
                 free(temp_pkt);
               }
             }
@@ -915,12 +911,12 @@ int main(int argc, const char * argv[])
               
               } else if (pkt->type == DHT_SEND_DATA) {
                 // Receiving a requested data packet
-                if (manager_sock) {
+                if (ui_sock) {
                   printf("Requested data packet received\n");
                   // Send the data up to the manager
                   temp_pkt = serialize_packet(pkt);
                   data_len = header_len + pkt->length;
-                  send_all(manager_sock, temp_pkt, &data_len);
+                  send_all(ui_sock, temp_pkt, &data_len);
                   free(temp_pkt);
                 } else if ('a' <= first_char && first_char <= 'f') {
                   // Test utility printing
@@ -933,11 +929,11 @@ int main(int argc, const char * argv[])
               } else if (pkt->type == DHT_NO_DATA) {
                 // Requested data packet not found
                 printf("Requested data packet not found\n");
-                if (manager_sock) {
+                if (ui_sock) {
                   // Send the data up to the manager
                   temp_pkt = serialize_packet(pkt);
                   data_len = header_len + pkt->length;
-                  send_all(manager_sock, temp_pkt, &data_len);
+                  send_all(ui_sock, temp_pkt, &data_len);
                   free(temp_pkt);
                 }
                 destroy_packet(pkt);
@@ -949,23 +945,24 @@ int main(int argc, const char * argv[])
                 break;
               }
             }
-          } else if (retval == 2 && manager_sock == 0) {
-            // Manager connecting
-            printf("Manager connected");
-            manager_sock = node_sock;
-            if (greatest_sock < manager_sock)
-              greatest_sock = manager_sock;
-            FD_SET(manager_sock, &master); // Add server listener to master set
           }
         }
         close(node_sock);
       }
 
       if (FD_ISSET(ui_listener, &socks)) {
+        // UI connecting
+        printf("UI connected\n");
+        ui_sock = accept(ui_listener, NULL, NULL);
+        FD_SET(ui_sock, &master); // Add ui socket to master set
+        if (greatest_sock < ui_sock)
+          greatest_sock = ui_sock;
+      }
+
+      if (ui_sock && FD_ISSET(ui_sock, &socks)) {
         printf("Message from UI\n");
-        int sock = accept(ui_listener, NULL, NULL);
-        int type = getInt(sock);
-        char *key1 = getSha1(sock);
+        int type = getInt(ui_sock);
+        char *key1 = getSha1(ui_sock);
 
         printf("Received type: %d\n", type);
         printf("Received key: %s\n", key1);
@@ -973,20 +970,18 @@ int main(int argc, const char * argv[])
         if (type == DHT_PUT_DATA && state == REGISTERED) {
           // Storing data to the DHT
           printf("Storing data...\n");
-          int length = getInt(sock);
-          printf("Received length: %d\n", length);
           unsigned char *data;
-          data = getBlock(sock, length);
-          printf("Received data\n");
+          int length = getInt(ui_sock);
+          data = getBlock(ui_sock, length);
           temp_pkt = encode_packet((unsigned char *)key1, key, DHT_PUT_DATA,
                                     length, data);
           data_len = header_len + length;
           send_all(server_sock, temp_pkt, &data_len);
           free(temp_pkt);
-        
+
         } else if (type == DHT_GET_DATA && state == REGISTERED) {
           printf("Fetching data...\n");
-          temp_pkt = encode_packet(pkt->destination, (unsigned char *)key, DHT_GET_DATA,
+          temp_pkt = encode_packet((unsigned char *)key1, key, DHT_GET_DATA,
                                     tcp_len, tcp_addr);
           data_len = header_len + tcp_len;
           send_all(server_sock, temp_pkt, &data_len);
@@ -994,14 +989,13 @@ int main(int argc, const char * argv[])
 
         } else if (type == DHT_DUMP_DATA && state == REGISTERED) {
           printf("Dropping data...\n");
-          temp_pkt = encode_packet(pkt->destination, (unsigned char *)key, DHT_DUMP_DATA,
+          temp_pkt = encode_packet((unsigned char *)key1, key, DHT_DUMP_DATA,
                                     0, NULL);
           data_len = header_len;
           send_all(server_sock, temp_pkt, &data_len);
           free(temp_pkt);
-        }
 
-        close(sock);
+        }
       }
     }
 
@@ -1046,6 +1040,6 @@ int main(int argc, const char * argv[])
   // Close sockets
   close(server_sock);
   close(node_listener);
-  if (manager_sock) close(manager_sock);
+  if (ui_sock) close(ui_sock);
   return 0;
 }

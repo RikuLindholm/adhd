@@ -45,8 +45,6 @@ public class FileMessage {
 
   // Fetch single block from DHT
   public void fetch() {
-    Connection conn = new Connection();
-    conn.connect();
     try {
       ByteBuffer buffer = ByteBuffer.allocate(4 + 40).order(ByteOrder.LITTLE_ENDIAN);
       Charset set = Charset.forName("UTF-8");
@@ -56,9 +54,7 @@ public class FileMessage {
       buffer.put(encoder.encode(CharBuffer.wrap(this.key)));
       buffer.flip();
 
-      while (buffer.hasRemaining()) {
-        conn.sock.write(buffer);
-      }
+      Connection.write(buffer);
 
       /*--- Read incoming data into file
         FileChannel out = new FileOutputStream("filepath.txt").getChannel();
@@ -73,14 +69,11 @@ public class FileMessage {
     } catch (IOException err) {
       System.err.println(err);
     }
-    conn.disconnect();
   }
 
   // Save block to DHT
   public void save() {
     readFile();
-    Connection conn = new Connection();
-    conn.connect();
     try {
       ByteBuffer buffer = ByteBuffer.allocate(4 + 40 + 4 + (int)this.file.length()).order(ByteOrder.LITTLE_ENDIAN);
       Charset set = Charset.forName("UTF-8");
@@ -92,12 +85,9 @@ public class FileMessage {
       buffer.put(this.data);
       buffer.flip();
 
-      while (buffer.hasRemaining()) {
-        conn.sock.write(buffer);
-      }
+      Connection.write(buffer);
     } catch (IOException err) {
       System.err.println(err);
     }
-    conn.disconnect();
   }
 }

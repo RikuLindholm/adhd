@@ -9,40 +9,32 @@ import java.nio.channels.SocketChannel;
 
 public class Connection {
 
-  public SocketChannel sock;
-  public String host;
-  public int port;
+  private static SocketChannel sock;
+  private static String host = "127.0.0.1";
+  private static int port = 52000;
 
-  public Connection() {
-    this.host = "127.0.0.1";
-    this.port = 52000;
-  }
-
-  public void connect() {
+  public static void connect() {
     try {
-      this.sock = SocketChannel.open();
-      this.sock.connect(new InetSocketAddress(this.host, this.port));
-      this.sock.finishConnect();
+      sock = SocketChannel.open();
+      sock.connect(new InetSocketAddress(host, port));
+      sock.finishConnect();
     } catch (IOException err) {
       System.err.println(err);
     }
   }
 
-  public void disconnect() {
+  public static void disconnect() {
     System.out.println("Closing connection");
     try {
-      this.sock.close();
+      sock.close();
     } catch (IOException err) {
       System.err.println(err);
     }
   }
 
-  public void sendMessage(ByteBuffer[] message) {
-    try {
-      System.out.println(message);
-      this.sock.write(message);
-    } catch (IOException err) {
-      System.err.println(err);
+  public static void write(ByteBuffer buffer) throws IOException {
+    while (buffer.hasRemaining()) {
+      sock.write(buffer);
     }
   }
 }

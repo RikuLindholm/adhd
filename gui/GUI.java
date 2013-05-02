@@ -50,13 +50,16 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
       this.bindEvents();
       this.render();
       this.setLocationRelativeTo(null); // Center window
+      Connection.connect();
     }
 
     /**
     * Implement window listener methods
     */
 
-    public void windowClosing(WindowEvent e) {}
+    public void windowClosing(WindowEvent e) {
+      Connection.disconnect();
+    }
     public void windowClosed(WindowEvent e) {}
     public void windowOpened(WindowEvent e) {}
     public void windowIconified(WindowEvent e) {}
