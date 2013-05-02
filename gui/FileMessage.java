@@ -4,10 +4,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.DataInputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CharsetDecoder;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.channels.FileChannel;
@@ -21,6 +23,7 @@ public class FileMessage {
   private byte[] data;
   private static final int GET = 21;
   private static final int PUT = 22;
+  private static final int NOT_FOUND = 28;
 
   public FileMessage(File file) {
     this.file = file;
@@ -45,32 +48,43 @@ public class FileMessage {
   }
 
   // Fetch single block from DHT
-  public void fetch() {
-    try {
-      ByteBuffer buffer = ByteBuffer.allocate(4 + 40).order(ByteOrder.LITTLE_ENDIAN);
-      Charset set = Charset.forName("UTF-8");
-      CharsetEncoder encoder = set.newEncoder();
+  public void fetch() throws IOException {
+    ByteBuffer buffer = ByteBuffer.allocate(4 + 40).order(ByteOrder.LITTLE_ENDIAN);
+    Charset set = Charset.forName("UTF-8");
+    CharsetEncoder encoder = set.newEncoder();
+    CharsetDecoder decoder = set.newDecoder();
 
-      buffer.putInt(GET);
-      buffer.put(encoder.encode(CharBuffer.wrap(this.key)));
-      buffer.flip();
+    buffer.putInt(GET);
+    buffer.put(encoder.encode(CharBuffer.wrap(this.key)));
+    buffer.flip();
 
-      Connection.write(buffer);
+    Connection.write(buffer);
 
-      /*
+    ByteBuffer buff = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN);
+    int read = 0;
+    while (read < 4) {
+      read += Connection.read(buff);
+    }
+    buff.flip();
+    if (buff.getInt() == NOT_FOUND) {
+      throw new FileNotFoundException("File could not be found in the DHT");
+    } else {
+      ByteBuffer shaBuff = ByteBuffer.allocate(40);
+      read = 0;
+      while (read < 40)
+        read += Connection.read(buff);
+      System.out.println("Getting file data with key: " + decoder.decode(shaBuff).toString());
       FileChannel out = new FileOutputStream("filepath.txt").getChannel();
-      ByteBuffer buff = ByteBuffer.allocateDirect(8 * 24);
-      while (Connection.read(buff) > 0) {
-        buff.flip();
-        out.write(buff);
-        buff.clear();
+      ByteBuffer buff2 = ByteBuffer.allocate(1024);
+      while (Connection.read(buff2) > 0) {
+        buff2.flip();
+        out.write(buff2);
+        buff2.clear();
       }
       out.close();
-      */
-      System.out.println("Fetched file");
-    } catch (IOException err) {
-      System.err.println(err);
     }
+
+    System.out.println("Fetched file");
   }
 
   // Save block to DHT

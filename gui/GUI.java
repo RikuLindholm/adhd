@@ -175,8 +175,12 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
         if ((fileName != null) && (fileName.length() > 0)) {
           File file = new File("/Users/woochi/Desktop/testfile");
           FileMessage message = new FileMessage(file);
-          message.fetch();
-          progressLabel.setText(progressLabel.getText() + "\n" +"Downloaded file " + fileName + ".<br>");
+          try {
+            message.fetch();
+            progressLabel.setText(progressLabel.getText() + "\n" +"Downloaded file " + fileName);
+          } catch (IOException err) {
+            progressLabel.setText(err.getMessage());
+          }
         }
       }
     }
