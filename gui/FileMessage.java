@@ -82,13 +82,14 @@ public class FileMessage {
     Connection conn = new Connection();
     conn.connect();
     try {
-      ByteBuffer buffer = ByteBuffer.allocate(4 + 40 + 4).order(ByteOrder.LITTLE_ENDIAN);
+      ByteBuffer buffer = ByteBuffer.allocate(4 + 40 + 4 + (int)this.file.length()).order(ByteOrder.LITTLE_ENDIAN);
       Charset set = Charset.forName("UTF-8");
       CharsetEncoder encoder = set.newEncoder();
 
       buffer.putInt(PUT);
       buffer.put(encoder.encode(CharBuffer.wrap(this.key)));
       buffer.putInt((int)this.file.length());
+      buffer.put(this.data);
       buffer.flip();
 
       while (buffer.hasRemaining()) {

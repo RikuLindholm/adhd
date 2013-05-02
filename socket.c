@@ -10,7 +10,7 @@ int getInt(int socket) {
 }
 
 char *getSha1(int socket) {
-  int size = 20;
+  int size = 40;
   char *key = malloc(sizeof(char) * size);
   int n = 0;
   while (n < size)
@@ -21,7 +21,11 @@ char *getSha1(int socket) {
 unsigned char *getBlock(int socket, int length) {
   unsigned char* block = malloc(sizeof(unsigned char) * length);
   int n = 0;
-  while (n < length)
+  printf("Getting block of size %d\n", length);
+  while (n < length) {
+    printf("Trying to read bytes\n");
     n += recv(socket, block + n, length - n, 0);
+    printf("Read %d bytes\n", n);
+  }
   return block;
 }

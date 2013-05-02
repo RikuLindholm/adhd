@@ -965,19 +965,20 @@ int main(int argc, const char * argv[])
         printf("Message from UI\n");
         int sock = accept(ui_listener, NULL, NULL);
         int type = getInt(sock);
-        char *key = getSha1(sock);
+        char *key1 = getSha1(sock);
 
         printf("Received type: %d\n", type);
-        printf("Received key: %s\n", key);
+        printf("Received key: %s\n", key1);
 
         if (type == DHT_PUT_DATA && state == REGISTERED) {
           // Storing data to the DHT
           printf("Storing data...\n");
           int length = getInt(sock);
-          unsigned char *data = getBlock(sock, length);
           printf("Received length: %d\n", length);
-          printf("Received data");
-          temp_pkt = encode_packet(pkt->destination, (unsigned char *)key, DHT_PUT_DATA,
+          unsigned char *data;
+          data = getBlock(sock, length);
+          printf("Received data\n");
+          temp_pkt = encode_packet((unsigned char *)key1, key, DHT_PUT_DATA,
                                     length, data);
           data_len = header_len + length;
           send_all(server_sock, temp_pkt, &data_len);
@@ -990,6 +991,7 @@ int main(int argc, const char * argv[])
           data_len = header_len + tcp_len;
           send_all(server_sock, temp_pkt, &data_len);
           free(temp_pkt);
+
         } else if (type == DHT_DUMP_DATA && state == REGISTERED) {
           printf("Dropping data...\n");
           temp_pkt = encode_packet(pkt->destination, (unsigned char *)key, DHT_DUMP_DATA,
