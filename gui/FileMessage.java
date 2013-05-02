@@ -13,6 +13,8 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.channels.FileChannel;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import gui.Connection;
 
 public class FileMessage {
@@ -27,7 +29,25 @@ public class FileMessage {
 
   public FileMessage(File file) {
     this.file = file;
-    this.key = "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"; // sha1(file.getName())
+    this.key = sha1(file.getName());
+  }
+
+  private String sha1(String value) {
+    MessageDigest md = null;
+    try {
+      md = MessageDigest.getInstance("SHA-1");
+    } catch (NoSuchAlgorithmException err) {
+      System.err.println(err);
+    }
+    return byteArrayToHexString(md.digest(value.getBytes()));
+  }
+
+  private String byteArrayToHexString(byte[] b) {
+    String result = "";
+    for (int i=0; i < b.length; i++) {
+      result += Integer.toString( ( b[i] & 0xff ) + 0x100, 16).substring( 1 );
+    }
+    return result;
   }
 
   // Read file into memory
@@ -69,41 +89,33 @@ public class FileMessage {
     if (buff.getInt() == NOT_FOUND) {
       throw new FileNotFoundException("File could not be found in the DHT");
     } else {
-      ByteBuffer shaBuff = ByteBuffer.allocate(40);
-      read = 0;
-      while (read < 40)
-        read += Connection.read(buff);
-      System.out.println("Getting file data with key: " + decoder.decode(shaBuff).toString());
-      FileChannel out = new FileOutputStream("filepath.txt").getChannel();
+      FileChannel out = new FileOutputStream("response.txt").getChannel();
       ByteBuffer buff2 = ByteBuffer.allocate(1024);
-      while (Connection.read(buff2) > 0) {
+      int retval = 1;
+      while (retval > 0) {
+        retval = Connection.read(buff2);
         buff2.flip();
         out.write(buff2);
         buff2.clear();
       }
+      System.out.println("Got all file data");
       out.close();
     }
-
-    System.out.println("Fetched file");
   }
 
   // Save block to DHT
-  public void save() {
+  public void save() throws IOException {
     readFile();
-    try {
-      ByteBuffer buffer = ByteBuffer.allocate(4 + 40 + 4 + (int)this.file.length()).order(ByteOrder.LITTLE_ENDIAN);
-      Charset set = Charset.forName("UTF-8");
-      CharsetEncoder encoder = set.newEncoder();
+    ByteBuffer buffer = ByteBuffer.allocate(4 + 40 + 4 + (int)this.file.length()).order(ByteOrder.LITTLE_ENDIAN);
+    Charset set = Charset.forName("UTF-8");
+    CharsetEncoder encoder = set.newEncoder();
 
-      buffer.putInt(PUT);
-      buffer.put(encoder.encode(CharBuffer.wrap(this.key)));
-      buffer.putInt((int)this.file.length());
-      buffer.put(this.data);
-      buffer.flip();
+    buffer.putInt(PUT);
+    buffer.put(encoder.encode(CharBuffer.wrap(this.key)));
+    buffer.putInt((int)this.file.length());
+    buffer.put(this.data);
+    buffer.flip();
 
-      Connection.write(buffer);
-    } catch (IOException err) {
-      System.err.println(err);
-    }
+    Connection.write(buffer);
   }
 }

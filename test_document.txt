@@ -1,0 +1,6 @@
+This is a test document.
+It has multiple lines.
+
+It should be storable over to the DHT.
+It should be loadable from the DHT.
+Under any name you want.

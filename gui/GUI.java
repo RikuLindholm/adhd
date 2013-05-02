@@ -155,7 +155,12 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
             if (returnVal == JFileChooser.APPROVE_OPTION) {
               File file = fc.getSelectedFile();
               FileMessage message = new FileMessage(file);
-              message.save();
+              try {
+                message.save();
+                progressLabel.setText("Saved file " + file.getName() + " to the DHT");
+              } catch (IOException err) {
+                progressLabel.setText(err.getMessage());
+              }
             }
         }
     }
@@ -173,11 +178,11 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
 
         //If a string was returned, say so.
         if ((fileName != null) && (fileName.length() > 0)) {
-          File file = new File("/Users/woochi/Desktop/testfile");
+          File file = new File(fileName);
           FileMessage message = new FileMessage(file);
           try {
             message.fetch();
-            progressLabel.setText(progressLabel.getText() + "\n" +"Downloaded file " + fileName);
+            progressLabel.setText("Downloaded file " + fileName);
           } catch (IOException err) {
             progressLabel.setText(err.getMessage());
           }
