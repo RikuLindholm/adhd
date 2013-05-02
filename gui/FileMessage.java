@@ -6,6 +6,10 @@ import java.io.IOException;
 import java.io.DataInputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.CharsetEncoder;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.channels.FileChannel;
 import gui.Connection;
 
 public class FileMessage {
@@ -14,8 +18,8 @@ public class FileMessage {
   private String key;
   private int length;
   private byte[] data;
-  private static final int SAVE = 1;
-  private static final int FETCH = 2;
+  private static final int GET = 21;
+  private static final int PUT = 22;
 
   public FileMessage(File file) {
     this.file = file;
@@ -24,9 +28,8 @@ public class FileMessage {
 
   // Read file into memory
   private void readFile() {
-    this.length = (int) file.length();
     try {
-      this.data = new byte[(int) this.length];
+      this.data = new byte[(int) this.file.length()];
       DataInputStream stream = new DataInputStream(new FileInputStream(this.file));
       stream.readFully(this.data);
       stream.close();
@@ -42,7 +45,35 @@ public class FileMessage {
 
   // Fetch single block from DHT
   public void fetch() {
-    return;
+    Connection conn = new Connection();
+    conn.connect();
+    try {
+      ByteBuffer buffer = ByteBuffer.allocate(4 + 40).order(ByteOrder.LITTLE_ENDIAN);
+      Charset set = Charset.forName("UTF-8");
+      CharsetEncoder encoder = set.newEncoder();
+
+      buffer.putInt(GET);
+      buffer.put(encoder.encode(CharBuffer.wrap(this.key)));
+      buffer.flip();
+
+      while (buffer.hasRemaining()) {
+        conn.sock.write(buffer);
+      }
+
+      /*--- Read incoming data into file
+        FileChannel out = new FileOutputStream("filepath.txt").getChannel();
+        ByteBuffer buff = ByteBuffer.allocateDirect(8 * 24);
+        while (conn.sock.read(buff) > 0) {
+          buff.flip();
+          out.write(buff);
+          buff.clear();
+        }
+        out.close();
+      */
+    } catch (IOException err) {
+      System.err.println(err);
+    }
+    conn.disconnect();
   }
 
   // Save block to DHT
@@ -50,10 +81,22 @@ public class FileMessage {
     readFile();
     Connection conn = new Connection();
     conn.connect();
-    conn.sendMessage(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(SAVE).array()); // Send type
-    conn.sendMessage(ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(this.length).array()); // Send length
-    //conn.sendMessage(this.data); // Send data
+    try {
+      ByteBuffer buffer = ByteBuffer.allocate(4 + 40 + 4).order(ByteOrder.LITTLE_ENDIAN);
+      Charset set = Charset.forName("UTF-8");
+      CharsetEncoder encoder = set.newEncoder();
+
+      buffer.putInt(PUT);
+      buffer.put(encoder.encode(CharBuffer.wrap(this.key)));
+      buffer.putInt((int)this.file.length());
+      buffer.flip();
+
+      while (buffer.hasRemaining()) {
+        conn.sock.write(buffer);
+      }
+    } catch (IOException err) {
+      System.err.println(err);
+    }
     conn.disconnect();
-    return;
   }
 }

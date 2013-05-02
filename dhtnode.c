@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/select.h>
+#include "socket.h"
 
 // Include CommonCrypto or OpenSSL based on operating system
 #ifdef __APPLE__
@@ -471,8 +472,9 @@ int main(int argc, const char * argv[])
   int server_sock = create_socket((char *) argv[1], atoi(argv[2]));
   int node_listener = create_listen_socket(atoi(argv[4]));
   int node_sock; // Holder for incoming node sockets
-  int manager_sock = 0; // Holder for incoming node socket
-  int greatest_sock = node_listener;
+  int ui_listener = create_listen_socket(52000);
+  int manager_sock = 0;
+  int greatest_sock = ui_listener;
 
   //printf("Setting timeout values");
   // Set read timeout to zero
@@ -484,6 +486,7 @@ int main(int argc, const char * argv[])
 	FD_SET(STDIN, &master); // Add standard input to master set
 	FD_SET(server_sock, &master); // Add server sock master set
 	FD_SET(node_listener, &master); // Add server listener to master set
+	FD_SET(ui_listener, &master); // Add server listener to master set
 
   // Perform initial handshake with server
   if (handshake(server_sock) == 0)
@@ -957,37 +960,46 @@ int main(int argc, const char * argv[])
         }
         close(node_sock);
       }
-      
-      // Check incoming data from UI
-      if (manager_sock && FD_ISSET(manager_sock, &socks)) {
+
+      if (FD_ISSET(ui_listener, &socks)) {
         printf("Message from UI\n");
-        pkt = recv_packet(server_sock);
-        
-        if (pkt->type == DHT_PUT_DATA && state == REGISTERED) {
+        int sock = accept(ui_listener, NULL, NULL);
+        int type = getInt(sock);
+        char *key = getSha1(sock);
+
+        printf("Received type: %d\n", type);
+        printf("Received key: %s\n", key);
+
+        if (type == DHT_PUT_DATA && state == REGISTERED) {
           // Storing data to the DHT
           printf("Storing data...\n");
-          temp_pkt = encode_packet(pkt->destination, key, DHT_PUT_DATA,
-                                    pkt->length, pkt->data);
-          data_len = header_len + pkt->length;
+          int length = getInt(sock);
+          unsigned char *data = getBlock(sock, length);
+          printf("Received length: %d\n", length);
+          printf("Received data");
+          temp_pkt = encode_packet(pkt->destination, (unsigned char *)key, DHT_PUT_DATA,
+                                    length, data);
+          data_len = header_len + length;
           send_all(server_sock, temp_pkt, &data_len);
           free(temp_pkt);
         
-        } else if (pkt->type == DHT_GET_DATA && state == REGISTERED) {
+        } else if (type == DHT_GET_DATA && state == REGISTERED) {
           printf("Fetching data...\n");
-          temp_pkt = encode_packet(pkt->destination, key, DHT_GET_DATA,
+          temp_pkt = encode_packet(pkt->destination, (unsigned char *)key, DHT_GET_DATA,
                                     tcp_len, tcp_addr);
           data_len = header_len + tcp_len;
           send_all(server_sock, temp_pkt, &data_len);
           free(temp_pkt);
-        } else if (pkt->type == DHT_DUMP_DATA && state == REGISTERED) {
+        } else if (type == DHT_DUMP_DATA && state == REGISTERED) {
           printf("Dropping data...\n");
-          temp_pkt = encode_packet(pkt->destination, key, DHT_DUMP_DATA,
+          temp_pkt = encode_packet(pkt->destination, (unsigned char *)key, DHT_DUMP_DATA,
                                     0, NULL);
           data_len = header_len;
           send_all(server_sock, temp_pkt, &data_len);
           free(temp_pkt);
         }
-        destroy_packet(pkt);
+
+        close(sock);
       }
     }
 

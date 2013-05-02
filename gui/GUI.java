@@ -153,7 +153,6 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
               File file = fc.getSelectedFile();
               FileMessage message = new FileMessage(file);
               message.save();
-              // TODO: create and send an upload packet with file data
             }
         }
     }
@@ -171,8 +170,9 @@ public class GUI extends javax.swing.JFrame implements java.awt.event.WindowList
 
         //If a string was returned, say so.
         if ((fileName != null) && (fileName.length() > 0)) {
-          // TODO: send load file request
-          
+          File file = new File("/Users/woochi/Desktop/testfile");
+          FileMessage message = new FileMessage(file);
+          message.fetch();
           progressLabel.setText(progressLabel.getText() + "\n" +"Downloaded file " + fileName + ".<br>");
         }
       }

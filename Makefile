@@ -3,7 +3,7 @@ LDFLAGS=-lcrypto
 CC = gcc
 LD = gcc
 JCC = javac
-OBJS = dhtnode.o dhtpacket.o
+OBJS = dhtnode.o dhtpacket.o socket.o
 PROG = dhtnode
 JOBJS = gui/IconButton.class gui/Connection.class gui/FileMessage.class gui/GUI.class
 JPROG = gui/GUI.java
@@ -24,6 +24,9 @@ dhtnode.o: dhtnode.c dhtpacket.c dhtpackettypes.h connectionstates.h
 
 dhtpacket.o: dhtpacket.c
 	$(CC) $(CFLAGS) dhtpacket.c
+
+socket.o: socket.c
+	$(CC) $(CFLAGS) socket.c
 
 gui/GUI.class: gui/GUI.java
 	$(JCC) $(JPROG)
