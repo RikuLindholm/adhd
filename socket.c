@@ -44,9 +44,9 @@ void putSha1(int socket, char value[]) {
     n += send(socket, value + n, size - n, 0);
 }
 
-void putBytes(int socket, unsigned char value[]) {
-  int size = sizeof(value);
+void putBytes(int socket, unsigned char value[], int length) {
   int n = 0;
-  while(n < size)
-    n += send(socket, value + n, size - n, 0);
+  while(n < length)
+    n += send(socket, value + n, length - n, 0);
+  printf("Sent %d bytes", length);
 }

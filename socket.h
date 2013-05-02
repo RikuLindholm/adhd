@@ -19,6 +19,6 @@ void putInt(int socket, int value);
 
 void putSha1(int socket, char value[]);
 
-void putBytes(int socket, unsigned char value[]);
+void putBytes(int socket, unsigned char value[], int length);
 
 #endif

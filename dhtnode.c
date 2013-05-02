@@ -782,9 +782,10 @@ int main(int argc, const char * argv[])
               cur_node = cur_node->next;
             }
           }
+
           // Checking that the request was not from this node
           if (strcmp((char *)tcp_addr, (char *)pkt->data) == 0) {
-            // The requesting node is the same as this one
+            // The requesting node is not the same as this one
             if (temp_int) {
               // Send the data
               if (ui_sock) {
@@ -792,9 +793,10 @@ int main(int argc, const char * argv[])
                 // Send the data up to the manager
                 temp_pkt = encode_packet(pkt2->destination, key, DHT_SEND_DATA,
                                         pkt2->length, pkt2->data);
+                data_len = pkt2->length;
                 putInt(ui_sock, DHT_SEND_DATA);
-                putSha1(ui_sock, (char *)pkt2->destination);
-                putBytes(ui_sock, pkt2->data);
+                // putInt(ui_sock, data_len);
+                putBytes(ui_sock, pkt2->data, data_len);
                 free(temp_pkt);
               } else if ('a' <= first_char && first_char <= 'f') {
                 // Test utility printing
@@ -810,7 +812,7 @@ int main(int argc, const char * argv[])
             }
           } else {
             // The requesting node is not this one
-            printf("Data requested from this node\n");
+            printf("Data requested from another node\n");
             node_host = pkt->data + 2;
             node_port = parse_port(pkt->data);
             node_sock = create_socket((char *) node_host, node_port);
