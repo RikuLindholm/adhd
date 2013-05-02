@@ -763,6 +763,7 @@ int main(int argc, const char * argv[])
         } else if (pkt->type == DHT_PUT_DATA_ACK) {
           // Data stored succesfull to the dht
           printf("Data stored succesfully\n");
+          // TODO send ACK to UI socket
           destroy_packet(pkt);
           
         } else if (pkt->type == DHT_GET_DATA) {
@@ -791,8 +792,9 @@ int main(int argc, const char * argv[])
                 // Send the data up to the manager
                 temp_pkt = encode_packet(pkt2->destination, key, DHT_SEND_DATA,
                                         pkt2->length, pkt2->data);
-                data_len = header_len + pkt2->length;
-                send_all(ui_sock, temp_pkt, &data_len);
+                putInt(ui_sock, DHT_SEND_DATA);
+                putSha1(ui_sock, (char *)pkt2->destination);
+                putBytes(ui_sock, pkt2->data);
                 free(temp_pkt);
               } else if ('a' <= first_char && first_char <= 'f') {
                 // Test utility printing
@@ -803,11 +805,7 @@ int main(int argc, const char * argv[])
               // Send no_data
               printf("Requested data packet not found\n");
               if (ui_sock) {
-                // Send the data up to the manager
-                temp_pkt = encode_packet(key, key, DHT_NO_DATA, 0, NULL);
-                data_len = header_len;
-                send_all(ui_sock, temp_pkt, &data_len);
-                free(temp_pkt);
+                putInt(ui_sock, DHT_NO_DATA);
               }
             }
           } else {
@@ -915,8 +913,8 @@ int main(int argc, const char * argv[])
                   printf("Requested data packet received\n");
                   // Send the data up to the manager
                   temp_pkt = serialize_packet(pkt);
-                  data_len = header_len + pkt->length;
-                  send_all(ui_sock, temp_pkt, &data_len);
+                  data_len = 0 + pkt->length;
+                  send_all(ui_sock, (char *)pkt->data, &data_len);
                   free(temp_pkt);
                 } else if ('a' <= first_char && first_char <= 'f') {
                   // Test utility printing
@@ -972,7 +970,7 @@ int main(int argc, const char * argv[])
           printf("Storing data...\n");
           unsigned char *data;
           int length = getInt(ui_sock);
-          data = getBlock(ui_sock, length);
+          data = getBytes(ui_sock, length);
           temp_pkt = encode_packet((unsigned char *)key1, key, DHT_PUT_DATA,
                                     length, data);
           data_len = header_len + length;

@@ -24,7 +24,6 @@ public class Connection {
   }
 
   public static void disconnect() {
-    System.out.println("Closing connection");
     try {
       sock.close();
     } catch (IOException err) {
@@ -36,5 +35,9 @@ public class Connection {
     while (buffer.hasRemaining()) {
       sock.write(buffer);
     }
+  }
+
+  public static int read(ByteBuffer buffer) throws IOException {
+    return sock.read(buffer);
   }
 }

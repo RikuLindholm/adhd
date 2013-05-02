@@ -2,6 +2,7 @@ package gui;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.DataInputStream;
 import java.nio.ByteBuffer;
@@ -56,16 +57,17 @@ public class FileMessage {
 
       Connection.write(buffer);
 
-      /*--- Read incoming data into file
-        FileChannel out = new FileOutputStream("filepath.txt").getChannel();
-        ByteBuffer buff = ByteBuffer.allocateDirect(8 * 24);
-        while (conn.sock.read(buff) > 0) {
-          buff.flip();
-          out.write(buff);
-          buff.clear();
-        }
-        out.close();
+      /*
+      FileChannel out = new FileOutputStream("filepath.txt").getChannel();
+      ByteBuffer buff = ByteBuffer.allocateDirect(8 * 24);
+      while (Connection.read(buff) > 0) {
+        buff.flip();
+        out.write(buff);
+        buff.clear();
+      }
+      out.close();
       */
+      System.out.println("Fetched file");
     } catch (IOException err) {
       System.err.println(err);
     }

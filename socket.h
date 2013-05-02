@@ -13,6 +13,12 @@ int getInt(int socket);
 
 char *getSha1(int socket);
 
-unsigned char *getBlock(int socket, int length);
+unsigned char *getBytes(int socket, int length);
+
+void putInt(int socket, int value);
+
+void putSha1(int socket, char value[]);
+
+void putBytes(int socket, unsigned char value[]);
 
 #endif
