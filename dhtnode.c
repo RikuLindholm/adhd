@@ -469,7 +469,7 @@ int main(int argc, const char * argv[])
   int node_listener = create_listen_socket(atoi(argv[4]));
   int ui_listener = create_listen_socket(52000);
   int node_sock; // Holder for incoming node sockets
-  int ui_sock;
+  int ui_sock = 0;
   int greatest_sock = ui_listener;
 
   //printf("Setting timeout values");
