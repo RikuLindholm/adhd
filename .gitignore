@@ -1,6 +1,7 @@
 *.o
 *.class
 ./bin/*
+response.txt
 main
 dhtnode
 .DS_Store

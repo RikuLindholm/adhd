@@ -46,14 +46,18 @@ int create_listen_socket(int port)
   a.sin_family = AF_INET;
   a.sin_port = htons(port);
 
+  printf("binding to port: %d\n", port);
+  printf("First\n");
   fd = socket(PF_INET, SOCK_STREAM, 0);
   if (fd == -1)
     die(strerror(errno));
 
+  printf("Second\n");
   t = bind(fd, (struct sockaddr *)(&a), sizeof(struct sockaddr_in));
   if (t == -1)
     die(strerror(errno));
 
+  printf("Third\n");
   t = listen(fd, MAX_CONNECTIONS);
   if (t == -1)
     die(strerror(errno));        

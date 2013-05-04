@@ -57,9 +57,13 @@ int main(int argc, const char * argv[])
   sha1(tcp_addr, (unsigned int) tcp_len, key);
 
   // Create sockets
+  printf("Server socket\n");
   int server_sock = create_socket((char *) argv[1], atoi(argv[2]));
+  printf("Node listener\n");
   int node_listener = create_listen_socket(atoi(argv[4]));
-  int ui_listener = create_listen_socket(52000);
+  printf("UI listener\n");
+  int ui_listener = create_listen_socket(atoi(argv[5]));
+  printf("Continuing\n");
   int node_sock; // Holder for incoming node sockets
   int ui_sock = 0;
   int greatest_sock = ui_listener;
