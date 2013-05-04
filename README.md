@@ -3,35 +3,46 @@ A Distributed Hash Device (ADHD)
 
 ADHD is a distributed file store client implementation.
 
+## Quick Instructions
+
+For quickly testing the client and GUI, please run:
+
+  make                # Compile client and GUI
+  make run            # Run client
+  make run-gui        # Run GUI
+
 ## Running the server
 
-A java implementation of the DHT server is given as a JAR package.
-You can start the server by running:
+A test server is constantly running at dht.mikkokivela.com:80 so there is no actual need to run the server locally.
+
+If you would however like to run the server locally, you can start it by running:
 
     java -jar DHTServer.jar <port>
 
-## Compiling and running the client
+## Compiling the client and GUI
 
-The client can be compiled easily by running:
+The client and the accompanying GUI can be compiled easily by running:
 
     make
 
-This compiles the code into an executable named 'dhtonode' which can be run with:
+This compiles the code into an executable named 'dhtonode'.
 
-    make run  // Defaults to options: 127.0.0.1 3200 127.0.0.1 50000
+## Running the client
 
-Alternatively, to manually define the client options, it can be run with:
+The C client can be started easily by running:
+
+    make run  // Defaults to options: dht.mikkokivela.com 80 127.0.0.1 50000
+
+Alternatively, to manually define the client options (e.g. for connecting to a local server), it can be run with:
  
     ./dhtonode <server-address> <server-port> <my-address> <my-port>
 
 Note that the server needs to be running for proper functionality.
 
-## Compiling and Running the GUI
+## Running the GUI
 
-The project includes a Java GUI for storing and fetching files from the DHT. To compile and run the GUI, simply run:
-
-    make gui
-
-Or if you simply want to run the GUI without recompiling:
+For running the accompanying GUI you can simply run:
 
     make run-gui
+
+Please make sure that both the server and the C client are running before starting the GUI.
