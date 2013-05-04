@@ -3,6 +3,7 @@ HOST ?= 127.0.0.1
 UIPORT ?= 52000
 
 all:
+	mkdir -p bin
 	$(MAKE) -C src
 	$(MAKE) -C gui
 
