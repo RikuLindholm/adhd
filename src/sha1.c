@@ -18,7 +18,8 @@ int difference(unsigned char *result, unsigned char *a, unsigned char *b)
 {
   // Check if a is bigger than b. If not -> switch
   int a_bigger = 1;
-  for (int i = 0; i < SHA1_DIGEST_LENGTH; i++) {
+  int i, j;
+  for (i = 0; i < SHA1_DIGEST_LENGTH; i++) {
     if (b[i] > a[i]) {
       unsigned char *temp = a;
       a = b;
@@ -31,7 +32,7 @@ int difference(unsigned char *result, unsigned char *a, unsigned char *b)
   // Perform subtraction a - b
   short carry = 0;
   short v1;
-  for (int i = SHA1_DIGEST_LENGTH - 1; i >= 0; i--) {
+  for (i = SHA1_DIGEST_LENGTH - 1; i >= 0; i--) {
     v1 = (short)a[i] - carry - (short)b[i];
     carry = 0;
     if (v1 < 0){
@@ -42,13 +43,13 @@ int difference(unsigned char *result, unsigned char *a, unsigned char *b)
   }
   // Check if the complement distance is closer i.e. smaller than 0x80..0
   unsigned short limit = 0x80;
-  for (int j = 0; j < SHA1_DIGEST_LENGTH; j++) {
+  for (j = 0; j < SHA1_DIGEST_LENGTH; j++) {
     if ( result[j] > limit ) {
       // Complement is closer
-      for (int i = 0; i < SHA1_DIGEST_LENGTH; i++) {
+      for (i = 0; i < SHA1_DIGEST_LENGTH; i++) {
         result[i] = ~result[i];
       }
-      for (int i = SHA1_DIGEST_LENGTH - 1; i >= 0; i--) {
+      for (i = SHA1_DIGEST_LENGTH - 1; i >= 0; i--) {
         if (result[i] != 0xff) {
           result[i] += 1;
           break;
@@ -74,8 +75,9 @@ int find_closer_key(unsigned char *target, unsigned char *a, unsigned char *b)
   int a_bigger_t = difference(dif_a, a, target);
   unsigned char dif_b[SHA1_DIGEST_LENGTH];
   int b_bigger_t = difference(dif_b, b, target);
+  int i;
   // Check if one is closer
-  for (int i = 0; i < SHA1_DIGEST_LENGTH; i++) {
+  for (i = 0; i < SHA1_DIGEST_LENGTH; i++) {
     if (dif_b[i] > dif_a[i])
       return 1;
     if (dif_b[i] < dif_a[i])
@@ -88,7 +90,7 @@ int find_closer_key(unsigned char *target, unsigned char *a, unsigned char *b)
   if (!a_bigger_t && b_bigger_t)
     return 0;
   // Check if a or b is bigger
-  for (int i = 0; i < SHA1_DIGEST_LENGTH; i++) {
+  for (i = 0; i < SHA1_DIGEST_LENGTH; i++) {
     if (b[i] > a[i]) {
       return 1;
     } else if (b[i] < a[i])
@@ -102,7 +104,8 @@ int find_closer_key(unsigned char *target, unsigned char *a, unsigned char *b)
 // Return: 1 if equal, 0 if not equal
 int compare_keys(unsigned char *key1, unsigned char *key2)
 {
-  for (int i = 0; i < SHA1_DIGEST_LENGTH; i++) {
+  int i;
+  for (i = 0; i < SHA1_DIGEST_LENGTH; i++) {
     if (key1[i] != key2[i])
       return 0;
   }

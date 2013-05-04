@@ -1,10 +1,7 @@
-package gui;
-
 import java.net.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import gui.FileMessage;
 import java.nio.channels.SocketChannel;
 
 public class Connection {

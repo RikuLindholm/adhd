@@ -2,8 +2,6 @@
  * Java GUI for a DHT Client
  */
 
-package gui;
-
 import java.io.*;
 import java.lang.String;
 import java.awt.event.*;
@@ -14,9 +12,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JScrollPane;
 import javax.swing.JOptionPane;
-
-import gui.Connection;
-import gui.IconButton;
 
 /**
  *

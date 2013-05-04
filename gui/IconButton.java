@@ -1,5 +1,3 @@
-package gui;
-
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 

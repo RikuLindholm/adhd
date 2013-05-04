@@ -1,5 +1,3 @@
-package gui;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -15,7 +13,6 @@ import java.nio.charset.Charset;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import gui.Connection;
 
 public class FileMessage {
 

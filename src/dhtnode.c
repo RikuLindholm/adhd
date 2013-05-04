@@ -262,7 +262,8 @@ int main(int argc, const char * argv[])
           // Separate the addresses
           temp_char_array = pkt->data;
           temp_int = 0;
-          for (int i = 3; i < pkt->length - 4; i++) {
+          int i;
+          for (i = 3; i < pkt->length - 4; i++) {
             if (temp_char_array[i] == '\0') {
               temp_int = i + 1;
               break;
@@ -296,7 +297,7 @@ int main(int argc, const char * argv[])
           }
           // For each neighbour, send the respective data and confirm
           unsigned char *addresses[2] = {address1, address2};
-          for (int i = 0; i < 2; i++) {
+          for (i = 0; i < 2; i++) {
             node_host = addresses[i];
             node_port = parse_port(temp_char_array + i*temp_int);
             node_sock = create_socket((char *) node_host, node_port);
