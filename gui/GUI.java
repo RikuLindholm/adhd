@@ -5,12 +5,9 @@
 import java.io.*;
 import java.lang.String;
 import java.awt.event.*;
-import java.util.Formatter;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JScrollPane;
 import javax.swing.JOptionPane;
@@ -23,13 +20,6 @@ import javax.swing.JOptionPane;
 public class Gui extends javax.swing.JFrame implements java.awt.event.WindowListener {
 
     //Variables
-    public String myPort;
-    public String myAddress;
-    public String serverPort;
-    public String serverAddress;
-    private Connection connection;
-    private IconButton connectButton;
-    private IconButton disconnectButton;
     private IconButton loadFileButton;
     private IconButton saveFileButton;
     private javax.swing.JSeparator separator;
@@ -77,7 +67,7 @@ public class Gui extends javax.swing.JFrame implements java.awt.event.WindowList
       setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
       // Text for report label
-      raportLabel.setText("Progress information             : ");
+      raportLabel.setText("Progress information:");
 
       // Initial text for progress terminal & alignment to top
       progressLabel.setVerticalAlignment(javax.swing.SwingConstants.TOP);
