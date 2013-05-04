@@ -23,7 +23,7 @@ run-prod-alt:
 	./bin/dhtnode dht.mikkokivela.com 80 $(HOST) 50100 51000
 
 run-gui:
-	java -cp ./gui GUI $(UIPORT)
+	java -cp ./gui Gui $(UIPORT)
 
 run-gui-alt:
-	java -cp ./gui GUI 51000
+	java -cp ./gui Gui 51000

@@ -5,7 +5,7 @@ CLASSES = \
 	Connection.java \
 	IconButton.java \
 	FileMessage.java \
-	GUI.java
+	Gui.java
 
 .SUFFIXES: .java .class
 
