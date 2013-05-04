@@ -53,7 +53,7 @@ clean:
 	/bin/rm -f *.o dhtnode gui/*.class
 
 run:
-	./$(PROG) 127.0.0.1 3200 127.0.0.1 50000
+	./$(PROG) dht.mikkokivela.com 80 127.0.0.1 50000
 
 run-gui:
 	java gui.GUI
