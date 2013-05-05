@@ -52,8 +52,8 @@ public class Gui extends JFrame implements java.awt.event.WindowListener {
       // Add title for the GUI
       setTitle("DHT Client");
 
-      loadFileButton = new IconButton("Load File from DHT", "icons/download.png");
-      saveFileButton = new IconButton("Save file to DHT", "icons/upload.png");
+      loadFileButton = new IconButton("Load File from DHT", "gui/icons/download.png");
+      saveFileButton = new IconButton("Save file to DHT", "gui/icons/upload.png");
 
       separator = new JSeparator();
       raportLabel = new JLabel();
@@ -97,21 +97,21 @@ public class Gui extends JFrame implements java.awt.event.WindowListener {
     private void render() {
         // Center the main window, set its size and unable resize
         setLayout(null);
-        setSize(270, 310);
+        setSize(290, 190);
         setResizable(false);
 
         // Button row
-        saveFileButton.setBounds(10, 60, 120, 40);
+        saveFileButton.setBounds(10, 10, 130, 40);
         add(saveFileButton);
-        loadFileButton.setBounds(140, 60, 120, 40);
+        loadFileButton.setBounds(140, 10, 140, 40);
         add(loadFileButton);
 
         // Static label
-        raportLabel.setBounds(10, 100, 140, 60);
+        raportLabel.setBounds(10, 40, 140, 60);
         add(raportLabel);
 
         // Network & file transfer pane
-        progressPane.setBounds(10, 140, 250, 140);
+        progressPane.setBounds(10, 80, 270, 80);
         add(progressPane);
         progressPane.setLayout(null);
         progressPane.setPreferredSize(progressPane.getSize());
