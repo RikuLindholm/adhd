@@ -12,12 +12,12 @@ OBJS = \
 	sha1.c
 
 all: objs
-	$(CC) $(OBJS) -o $(OUTPUT) $(LDLAGS)
+	$(CC) $(OBJS) -o $(OUTPUT) $(LDFLAGS)
 
 objs: $(OBJS:.c=.o)
 
 .c.o:
-	$(CC) $< -o $@ $(CFLAGS)
+	$(CC) $< -o $@ $(CFLAGS) $(LDFLAGS)
 
 clean:
 	/bin/rm *.o
