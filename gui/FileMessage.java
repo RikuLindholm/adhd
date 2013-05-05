@@ -72,8 +72,8 @@ public class FileMessage {
     /**
     * Write data block into a local file
     */
-    private void readFileFromChannel(int fileLength) throws IOException {
-        FileChannel out = new FileOutputStream("response.txt").getChannel();
+    private void readFileFromChannel(int fileLength, File targetFile) throws IOException {
+        FileChannel out = new FileOutputStream(targetFile).getChannel();
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         int read = 1;
 
@@ -90,7 +90,7 @@ public class FileMessage {
     /**
     * Fetch single data block from DHT
     */
-    public void fetch() throws IOException {
+    public void fetch(File targetFile) throws IOException {
         ByteBuffer header = ByteBuffer.allocate(HEADER_LEN).order(ByteOrder.LITTLE_ENDIAN);
 
         header.putInt(FILE_GET);
@@ -110,7 +110,7 @@ public class FileMessage {
             buffer.clear();
             Connection.read(buffer);
             buffer.flip();
-            readFileFromChannel(buffer.getInt());
+            readFileFromChannel(buffer.getInt(), targetFile);
         }
     }
 

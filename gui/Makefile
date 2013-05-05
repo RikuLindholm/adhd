@@ -5,6 +5,7 @@ CLASSES = \
 	Connection.java \
 	IconButton.java \
 	FileMessage.java \
+	SaveAsDialog.java \
 	Gui.java
 
 .SUFFIXES: .java .class

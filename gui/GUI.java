@@ -7,25 +7,22 @@ import java.lang.String;
 import java.awt.event.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-
-import javax.swing.JFileChooser;
-import javax.swing.JScrollPane;
-import javax.swing.JOptionPane;
+import javax.swing.*;
 
 /**
  *
  * @author Jerome Saarinen
  */
 
-public class Gui extends javax.swing.JFrame implements java.awt.event.WindowListener {
+public class Gui extends JFrame implements java.awt.event.WindowListener {
 
     //Variables
     private IconButton loadFileButton;
     private IconButton saveFileButton;
-    private javax.swing.JSeparator separator;
-    private javax.swing.JLabel progressLabel;
-    private javax.swing.JScrollPane progressPane;
-    private javax.swing.JLabel raportLabel;
+    private JSeparator separator;
+    private JLabel progressLabel;
+    private JScrollPane progressPane;
+    private JLabel raportLabel;
     private static final Logger logger = Logger.getLogger("gui");
 
     /**
@@ -58,19 +55,19 @@ public class Gui extends javax.swing.JFrame implements java.awt.event.WindowList
       loadFileButton = new IconButton("Load File from DHT", "icons/download.png");
       saveFileButton = new IconButton("Save file to DHT", "icons/upload.png");
 
-      separator = new javax.swing.JSeparator();
-      raportLabel = new javax.swing.JLabel();
-      progressPane = new javax.swing.JScrollPane();
-      progressLabel = new javax.swing.JLabel();
+      separator = new JSeparator();
+      raportLabel = new JLabel();
+      progressPane = new JScrollPane();
+      progressLabel = new JLabel();
 
        // Add default window close operation
-      setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+      setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
       // Text for report label
       raportLabel.setText("Progress information:");
 
       // Initial text for progress terminal & alignment to top
-      progressLabel.setVerticalAlignment(javax.swing.SwingConstants.TOP);
+      progressLabel.setVerticalAlignment(SwingConstants.TOP);
       progressPane.setViewportView(progressLabel);
     }
 
@@ -146,7 +143,7 @@ public class Gui extends javax.swing.JFrame implements java.awt.event.WindowList
     /**
     * Store file button click event handler
     */
-    private void saveFileButtonMouseClicked(java.awt.event.MouseEvent evt) {
+    private void saveFileButtonMouseClicked(MouseEvent evt) {
         //Create a file chooser
         final JFileChooser fc = new JFileChooser();
         //In response to a button click                     :
@@ -171,23 +168,19 @@ public class Gui extends javax.swing.JFrame implements java.awt.event.WindowList
     /**
     * Load file button click event handler
     */
-    private void loadFileButtonMouseClicked(java.awt.event.MouseEvent evt) {
+    private void loadFileButtonMouseClicked(MouseEvent evt) {
         if (loadFileButton.isEnabled()) {
-            String fileName = (String) JOptionPane.showInputDialog(
-                            this,
-                            "Type in the file name to fetch : \n",
-                            "Customized Dialog",
-                            JOptionPane.PLAIN_MESSAGE,
-                            null,
-                            null,
-                            null);
-
-            //If a string was returned, say so.
-            if ((fileName != null) && (fileName.length() > 0)) {
-                File file = new File(fileName);
-                FileMessage message = new FileMessage(file);
+            SaveAsDialog dialog = new SaveAsDialog();
+            String[] values = dialog.showDialog();
+            String fileName = values[0];
+            String targetPath = values[1];
+            // If file name and target path were returned, save the file
+            if (values[0] != null && values[1] != null) {
+                File targetFile = new File(targetPath);
+                File temp = new File(fileName);
+                FileMessage message = new FileMessage(temp);
                 try {
-                    message.fetch();
+                    message.fetch(targetFile);
                     logger.info("Successfully loaded " + fileName);
                     progressLabel.setText("Successfully loaded " + fileName);
                 } catch (IOException err) {
