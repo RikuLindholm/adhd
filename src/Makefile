@@ -4,6 +4,7 @@ CC = gcc
 TARGET = dhtnode
 OUTPUT = ../bin/$(TARGET)
 OBJS = \
+	helpers.c \
 	dhtnode.c \
 	dhtpacket.c \
 	socket.c \
