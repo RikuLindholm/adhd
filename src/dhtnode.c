@@ -569,6 +569,7 @@ int main(int argc, const char * argv[])
           data_len = header_len + length;
           send_all(server_sock, temp_pkt, &data_len);
           free(temp_pkt);
+          free(data);
 
         } else if (type == DHT_GET_DATA && state == REGISTERED) {
           printf("Fetching data...\n");
@@ -587,6 +588,7 @@ int main(int argc, const char * argv[])
           free(temp_pkt);
 
         }
+        free(key1);
       }
     }
 
