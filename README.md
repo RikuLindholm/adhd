@@ -7,9 +7,13 @@ ADHD is a distributed file store client implementation.
 
 For quickly testing the client and GUI, please run:
 
-  make                # Compile client and GUI
-  make run            # Run client
-  make run-gui        # Run GUI
+    make                # Compile client and GUI
+    make run            # Run client
+    make run-gui        # Run GUI
+
+Please note that the server needs to be running on port 3200:
+
+    java -jar DHTServer.jar 3200
 
 ## Running the server
 
