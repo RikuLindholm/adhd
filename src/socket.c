@@ -1,11 +1,5 @@
 #include "socket.h"
-
-// Utility method for printing error messages and exiting
-void die(char *reason)
-{
-  fprintf(stderr, "Fatal error: %s\n", reason);
-  exit(1);
-}
+#include "helpers.h"
 
 // Utility method for creating a socket to given port on given host
 // Return: the socket
@@ -46,18 +40,14 @@ int create_listen_socket(int port)
   a.sin_family = AF_INET;
   a.sin_port = htons(port);
 
-  printf("binding to port: %d\n", port);
-  printf("First\n");
   fd = socket(PF_INET, SOCK_STREAM, 0);
   if (fd == -1)
     die(strerror(errno));
 
-  printf("Second\n");
   t = bind(fd, (struct sockaddr *)(&a), sizeof(struct sockaddr_in));
   if (t == -1)
     die(strerror(errno));
 
-  printf("Third\n");
   t = listen(fd, MAX_CONNECTIONS);
   if (t == -1)
     die(strerror(errno));        
@@ -236,7 +226,7 @@ int handshake_listener(int sock)
   return ret;
 }
 
-int getInt(int socket) {
+int get_int(int socket) {
   int value;
   int size = sizeof(int);
   int n = 0;
@@ -245,42 +235,38 @@ int getInt(int socket) {
   return value;
 }
 
-char *getSha1(int socket) {
+char *get_sha1(int socket) {
   int size = 40;
   char *key = malloc(sizeof(char) * size);
   int n = 0;
   while (n < size)
-    n += recv(socket, key + n, size - n, 0);
+    n += recv(socket, key + n, size -n, 0);
   return key;
 }
 
-unsigned char *getBytes(int socket, int length) {
-  unsigned char* block = malloc(sizeof(unsigned char) * length);
+unsigned char *get_bytes(int socket, int length) {
+  unsigned char *block = malloc(sizeof(unsigned char) * length);
   int n = 0;
-  printf("Getting block of size %d\n", length);
-  while (n < length) {
-    printf("Trying to read bytes\n");
+  while (n < length)
     n += recv(socket, block + n, length - n, 0);
-    printf("Read %d bytes\n", n);
-  }
   return block;
 }
 
-void putInt(int socket, int value) {
+void put_int(int socket, int value) {
   int size = 4;
   int n = 0;
   while(n < size)
     n += send(socket, &value + n, size - n, 0);
 }
 
-void putSha1(int socket, char value[]) {
+void put_sha1(int socket, char value[]) {
   int size = 40;
   int n = 0;
   while(n < size)
     n += send(socket, value + n, size - n, 0);
 }
 
-void putBytes(int socket, unsigned char value[], int length) {
+void put_bytes(int socket, unsigned char value[], int length) {
   int n = 0;
   while(n < length)
     n += send(socket, value + n, length - n, 0);

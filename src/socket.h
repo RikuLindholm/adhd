@@ -12,15 +12,11 @@
 #include <sys/select.h>
 #include <unistd.h>
 #include <string.h>
-#include <errno.h>
 #include "dhtpacket.h"
 #include "sha1.h"
 
 static const unsigned short DHT_SERVER_SHAKE = 0x413f;
 static const unsigned short DHT_CLIENT_SHAKE = 0x4121;
-
-// Utility method for printing error messages and exiting
-void die(char *reason);
 
 // Utility method for creating a socket to given port on given host
 // Return: the socket
@@ -58,16 +54,16 @@ int handshake(int sock);
 //          0 otherwise
 int handshake_listener(int sock);
 
-int getInt(int socket);
+int get_int(int socket);
 
-char *getSha1(int socket);
+char *get_sha1(int socket);
 
-unsigned char *getBytes(int socket, int length);
+unsigned char *get_bytes(int socket, int length);
 
-void putInt(int socket, int value);
+void put_int(int socket, int value);
 
-void putSha1(int socket, char value[]);
+void put_sha1(int socket, char value[]);
 
-void putBytes(int socket, unsigned char value[], int length);
+void put_bytes(int socket, unsigned char value[], int length);
 
 #endif

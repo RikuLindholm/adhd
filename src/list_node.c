@@ -1,13 +1,12 @@
 #include "list_node.h"
+#include "helpers.h"
 
 // Inserts the given DHTPacket into the given list.
 void push_to_list(list_node **list, DHTPacket *packet)
 {
   list_node *new = malloc(sizeof(list_node));
-  if (new == NULL) {
-    fprintf(stderr, "Fatal error: Out of memory\n");
-    exit(1);
-  }
+  if (new == NULL)
+    die("Out of memory\n");
   new->packet = packet;
   new->selected = 0;
   if (list) new->next = *list;

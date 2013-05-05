@@ -20,6 +20,7 @@
 #include <sys/select.h>
 #include "socket.h"
 #include "sha1.h"
+#include "helpers.h"
 
 #define STDIN 0  // file descriptor for standard input
 
@@ -57,13 +58,9 @@ int main(int argc, const char * argv[])
   sha1(tcp_addr, (unsigned int) tcp_len, key);
 
   // Create sockets
-  printf("Server socket\n");
   int server_sock = create_socket((char *) argv[1], atoi(argv[2]));
-  printf("Node listener\n");
   int node_listener = create_listen_socket(atoi(argv[4]));
-  printf("UI listener\n");
   int ui_listener = create_listen_socket(atoi(argv[5]));
-  printf("Continuing\n");
   int node_sock; // Holder for incoming node sockets
   int ui_sock = 0;
   int greatest_sock = ui_listener;
@@ -391,9 +388,9 @@ int main(int argc, const char * argv[])
                 temp_pkt = encode_packet(pkt2->destination, key, DHT_SEND_DATA,
                                         pkt2->length, pkt2->data);
                 data_len = 0 + pkt2->length;
-                putInt(ui_sock, DHT_SEND_DATA);
-                putInt(ui_sock, data_len);
-                putBytes(ui_sock, pkt2->data, data_len);
+                put_int(ui_sock, DHT_SEND_DATA);
+                put_int(ui_sock, data_len);
+                put_bytes(ui_sock, pkt2->data, data_len);
                 free(temp_pkt);
               }
 
@@ -401,7 +398,7 @@ int main(int argc, const char * argv[])
               // Send no_data
               printf("Requested data packet not found\n");
               if (ui_sock) {
-                putInt(ui_sock, DHT_NO_DATA);
+                put_int(ui_sock, DHT_NO_DATA);
               }
             }
           } else {
@@ -555,8 +552,8 @@ int main(int argc, const char * argv[])
 
       if (ui_sock && FD_ISSET(ui_sock, &socks)) {
         printf("Message from UI\n");
-        int type = getInt(ui_sock);
-        char *key1 = getSha1(ui_sock);
+        int type = get_int(ui_sock);
+        char *key1 = get_sha1(ui_sock);
 
         printf("Received type: %d\n", type);
         printf("Received key: %s\n", key1);
@@ -565,8 +562,8 @@ int main(int argc, const char * argv[])
           // Storing data to the DHT
           printf("Storing data...\n");
           unsigned char *data;
-          int length = getInt(ui_sock);
-          data = getBytes(ui_sock, length);
+          int length = get_int(ui_sock);
+          data = get_bytes(ui_sock, length);
           temp_pkt = encode_packet((unsigned char *)key1, key, DHT_PUT_DATA,
                                     length, data);
           data_len = header_len + length;
