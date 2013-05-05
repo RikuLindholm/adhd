@@ -418,10 +418,10 @@ int main(int argc, const char * argv[])
                 if (ui_sock) {
                   printf("Requested data packet received\n");
                   // Send the data up to the manager
-                  temp_pkt = serialize_packet(pkt);
-                  data_len = 0 + pkt->length;
-                  send_all(ui_sock, (char *)pkt->data, &data_len);
-                  free(temp_pkt);
+                  data_len = pkt->length;
+                  put_int(ui_sock, DHT_SEND_DATA);
+                  put_int(ui_sock, data_len);
+                  put_bytes(ui_sock, pkt->data, data_len);
                 } else if ('a' <= first_char && first_char <= 'f') {
                   // Test utility printing
                   printf("Requested data received: \"%s\"\n", pkt->data);
@@ -429,7 +429,7 @@ int main(int argc, const char * argv[])
                 }
                 destroy_packet(pkt);
                 break;
-              
+
               } else if (pkt->type == DHT_NO_DATA) {
                 // Requested data packet not found
                 printf("Requested data packet not found\n");

@@ -77,7 +77,7 @@ public class FileMessage {
     private void readFileFromChannel(int fileLength, File targetFile) throws IOException {
         FileChannel out = new FileOutputStream(targetFile).getChannel();
         ByteBuffer buffer = ByteBuffer.allocate(1024);
-        int read = 1;
+        int read = 0;
 
         while (read < fileLength) {
             read += Connection.read(buffer);
