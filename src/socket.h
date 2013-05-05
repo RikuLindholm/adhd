@@ -30,6 +30,9 @@ int create_listen_socket(int port);
 // Return: 1 if socket has data else 0
 int data_incoming(int sock);
 
+// Check if socket is already closed
+int is_closed(int sock);
+
 // A utility method for safely sending data through socket
 // Input: sock - sock to send to, buf - buffer to read from, len - bytes to send
 // Return: -1 on failure, 0 on success

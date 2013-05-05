@@ -552,43 +552,47 @@ int main(int argc, const char * argv[])
 
       if (ui_sock && FD_ISSET(ui_sock, &socks)) {
         printf("Message from UI\n");
-        int type = get_int(ui_sock);
-        char *key1 = get_sha1(ui_sock);
+        if (is_closed(ui_sock)) {
+          printf("UI was closed - disconnecting...\n");
+          FD_CLR(ui_sock, &master);
+          greatest_sock = ui_listener;
+          state = DEREGISTERING;
+        } else {
+          int type = get_int(ui_sock);
+          char *key1 = get_sha1(ui_sock);
 
-        printf("Received type: %d\n", type);
-        printf("Received key: %s\n", key1);
+          if (type == DHT_PUT_DATA && state == REGISTERED) {
+            // Storing data to the DHT
+            printf("Storing data...\n");
+            unsigned char *data;
+            int length = get_int(ui_sock);
+            data = get_bytes(ui_sock, length);
+            temp_pkt = encode_packet((unsigned char *)key1, key, DHT_PUT_DATA,
+                                      length, data);
+            data_len = header_len + length;
+            send_all(server_sock, temp_pkt, &data_len);
+            free(temp_pkt);
+            free(data);
 
-        if (type == DHT_PUT_DATA && state == REGISTERED) {
-          // Storing data to the DHT
-          printf("Storing data...\n");
-          unsigned char *data;
-          int length = get_int(ui_sock);
-          data = get_bytes(ui_sock, length);
-          temp_pkt = encode_packet((unsigned char *)key1, key, DHT_PUT_DATA,
-                                    length, data);
-          data_len = header_len + length;
-          send_all(server_sock, temp_pkt, &data_len);
-          free(temp_pkt);
-          free(data);
+          } else if (type == DHT_GET_DATA && state == REGISTERED) {
+            printf("Fetching data...\n");
+            temp_pkt = encode_packet((unsigned char *)key1, key, DHT_GET_DATA,
+                                      tcp_len, tcp_addr);
+            data_len = header_len + tcp_len;
+            send_all(server_sock, temp_pkt, &data_len);
+            free(temp_pkt);
 
-        } else if (type == DHT_GET_DATA && state == REGISTERED) {
-          printf("Fetching data...\n");
-          temp_pkt = encode_packet((unsigned char *)key1, key, DHT_GET_DATA,
-                                    tcp_len, tcp_addr);
-          data_len = header_len + tcp_len;
-          send_all(server_sock, temp_pkt, &data_len);
-          free(temp_pkt);
+          } else if (type == DHT_DUMP_DATA && state == REGISTERED) {
+            printf("Dropping data...\n");
+            temp_pkt = encode_packet((unsigned char *)key1, key, DHT_DUMP_DATA,
+                                      0, NULL);
+            data_len = header_len;
+            send_all(server_sock, temp_pkt, &data_len);
+            free(temp_pkt);
 
-        } else if (type == DHT_DUMP_DATA && state == REGISTERED) {
-          printf("Dropping data...\n");
-          temp_pkt = encode_packet((unsigned char *)key1, key, DHT_DUMP_DATA,
-                                    0, NULL);
-          data_len = header_len;
-          send_all(server_sock, temp_pkt, &data_len);
-          free(temp_pkt);
-
+          }
+          free(key1);
         }
-        free(key1);
       }
     }
 

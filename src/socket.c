@@ -73,6 +73,15 @@ int data_incoming(int sock)
     return 0;
 }
 
+// A utility method for checking if socket is already closed
+// Return 1 if closed else 0
+int is_closed(int sock)
+{
+  unsigned char buffer;
+  int closed = recv(sock, &buffer, 1, MSG_PEEK) ? 0 : 1;
+  return closed;
+}
+
 // A utility method for safely sending data through socket
 // Input: sock - sock to send to, buf - buffer to read from, len - bytes to send
 // Return: -1 on failure, 0 on success
