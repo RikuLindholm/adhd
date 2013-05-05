@@ -89,41 +89,7 @@ int main(int argc, const char * argv[])
   unsigned char *compare_key1, *compare_key2, *temp_char_array;
   int data_len;
   int temp_int, first_char = 0;
-  DHTPacket *pkt, *pkt2;
-  
-  // Test keys
-  // #1: SHA1 from "50000 localhost": b9e2f030f9685d8f504931f60bf08a5c1e382545
-  // #2: SHA1 from "50001 localhost": c70984fa4af2a16a9a5489ac1055fa3791355268
-  // #3: SHA1 from "50002 localhost": 52f3d5c7fa258e04ac21bf51928b7cd9b90f9370
-  // Near #1 but closer to #2 than #3
-  unsigned char test_key1[20] =
-                {0xb9,0xe2,0xf0,0x30,0xf9,0x68,0x5d,0x8f,0x50,0x49,
-                 0x31,0xf6,0x0b,0xf0,0x8a,0x5c,0x1e,0x38,0x25,0x46};
-  // Near #1 but closer to #3 than #2
-  unsigned char test_key2[20] =
-                {0x8a,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-  // Near #2 but closer to #1 than #3
-  unsigned char test_key3[20] =
-                {0xc7,0x09,0x84,0xfa,0x4a,0xf2,0xa1,0x6a,0x9a,0x54,
-                 0x89,0xac,0x10,0x55,0xfa,0x37,0x91,0x35,0x52,0x67};
-  // Near #2 but closer to #3 than #1
-  unsigned char test_key4[20] =
-                {0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-  // Near #3 but closer to #1 than #2
-  unsigned char test_key5[20] =
-                {0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-  // Near #3 but closer to #2 than #1
-  unsigned char test_key6[20] =
-                {0x20,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-  unsigned char *test_keys[6] = {test_key1, test_key2, test_key3,
-                                    test_key4, test_key5, test_key6};  
-  unsigned char *test_key;
-  unsigned char test_data[] = "test_data_x";
-  
+  DHTPacket *pkt, *pkt2;  
   
   while (running) {
     socks = master; // Reset socks from master
@@ -138,12 +104,8 @@ int main(int argc, const char * argv[])
     if (retval) {
       // Check standard input
       if (FD_ISSET(STDIN, &socks)) {
-        // Utility actions by providing a string with first character as:
+        // Utility action by providing a string with first character as:
         // 'q': force quit
-        // 'l': list the current data of the node
-        // '1'-'6': store test_data 1-6 given above
-        // 'a'-'f': get and print the test_data 1-6
-        // 'A'-'F': drop the test_data 1-6
         first_char = getchar();
         temp_int = first_char;
         while (temp_int != '\n' && temp_int != EOF) temp_int = getchar();
@@ -151,55 +113,6 @@ int main(int argc, const char * argv[])
           if (first_char == 'q') {
             printf("Force disconnect\n");
             running = 0;
-          } else if (first_char == 'l') {
-            if (datalist != NULL){
-              printf("List of data in this node:\n");
-              cur_node = datalist;
-              while (cur_node) {
-                printf("| %.*s\n", cur_node->packet->length,
-                        cur_node->packet->data);
-                cur_node = cur_node->next;
-              }
-              printf("----------------\n");
-            } else printf("No data in this node\n");
-          } else if ('1' <= first_char && first_char <= '6') {
-            // Store data
-            data_len = strlen((char *) test_data) + 1;
-            test_data[data_len - 2] = first_char;
-            printf("Storing data: \"%s\"\n", test_data);
-            //sha1(test_data, (unsigned int) data_len, test_key);
-            test_key = test_keys[first_char - 49];
-            temp_pkt = encode_packet(test_key, key, DHT_PUT_DATA,
-                                      data_len, test_data);
-            data_len = header_len + data_len;
-            send_all(server_sock, temp_pkt, &data_len);
-            free(temp_pkt);
-            
-          } else if ('a' <= first_char && first_char <= 'f') {
-            // Get and print
-            data_len = strlen((char *) test_data) + 1;
-            test_data[data_len - 2] = first_char - 48;
-            printf("Requesting for \"%s\"\n", test_data);
-            //sha1(test_data, (unsigned int) data_len, test_key);
-            test_key = test_keys[first_char - 97];
-            temp_pkt = encode_packet(test_key, key, DHT_GET_DATA,
-                                      tcp_len, tcp_addr);
-            data_len = header_len + tcp_len;
-            send_all(server_sock, temp_pkt, &data_len);
-            free(temp_pkt);
-            
-          } else if ('A' <= first_char && first_char <= 'F') {
-            // Drop
-            data_len = strlen((char *) test_data) + 1;
-            test_data[data_len - 2] = first_char - 16;
-            printf("Requesting \"%s\" to be dropped\n", test_data);
-            //sha1(test_data, (unsigned int) data_len, test_key);
-            test_key = test_keys[first_char - 65];
-            temp_pkt = encode_packet(test_key, key, DHT_DUMP_DATA, 0, NULL);
-            data_len = header_len;
-            send_all(server_sock, temp_pkt, &data_len);
-            free(temp_pkt);
-            
           } else {
             printf("Disconnecting...\n");
             state = DEREGISTERING;
