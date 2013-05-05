@@ -99,16 +99,18 @@ public class FileMessage {
         Connection.write(header);
 
         // Read response type
-        ByteBuffer buffer = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN);
-        read += Connection.read(buffer, 8);
+        ByteBuffer buffer = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN);
+        Connection.read(buffer);
         buffer.flip();
 
-        int responseCode = buffer.getInt();
-        int fileLength = buffer.getInt();
-        if (responseCode == FILE_NOT_FOUND) {
+        if (responseCode == buffer.getInt()) {
             throw new FileNotFoundException("File could not be found in the DHT");
         } else {
-            readFileFromChannel(fileLength);
+            // Read file length
+            buffer.clear();
+            Connection.read(buffer);
+            buffer.flip();
+            readFileFromChannel(buffer.getInt());
         }
     }
 
