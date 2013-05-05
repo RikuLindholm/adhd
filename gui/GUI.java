@@ -149,7 +149,7 @@ public class Gui extends javax.swing.JFrame implements java.awt.event.WindowList
     private void saveFileButtonMouseClicked(java.awt.event.MouseEvent evt) {
         //Create a file chooser
         final JFileChooser fc = new JFileChooser();
-        //In response to a button click                     : 
+        //In response to a button click                     :
         if ((evt.getSource() == saveFileButton) && saveFileButton.isEnabled()) {
             int returnVal = fc.showOpenDialog(Gui.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
