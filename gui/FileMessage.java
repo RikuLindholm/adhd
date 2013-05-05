@@ -13,6 +13,7 @@ import java.nio.charset.Charset;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.lang.UnsupportedOperationException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -24,6 +25,7 @@ public class FileMessage {
     private static final int FILE_GET = 21;
     private static final int FILE_PUT = 22;
     private static final int FILE_NOT_FOUND = 28;
+    private static final int MAX_BLOCK_SIZE = 65535;
     private static final Logger logger = Logger.getLogger("gui");
     private static final CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
     private static final CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
@@ -120,6 +122,8 @@ public class FileMessage {
     public void save() throws IOException {
         ByteBuffer header = ByteBuffer.allocate(HEADER_LEN + 4).order(ByteOrder.LITTLE_ENDIAN);
         int fileLength = (int)this.file.length();
+        if (fileLength > MAX_BLOCK_SIZE)
+            throw new IOException("File too large. Multi-block transfer not supported.");
         header.putInt(FILE_PUT);
         header.put(encoder.encode(CharBuffer.wrap(this.key)));
         header.putInt(fileLength);

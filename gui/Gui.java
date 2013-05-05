@@ -159,7 +159,7 @@ public class Gui extends JFrame implements java.awt.event.WindowListener {
                     progressLabel.setText("Saved file " + fileName + " to the DHT");
                 } catch (IOException err) {
                     logger.log(Level.WARNING, "Error storing " + fileName, err);
-                    progressLabel.setText("Error storing " + fileName);
+                    progressLabel.setText(err.getMessage());
                 }
             }
         }
