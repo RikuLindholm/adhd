@@ -390,9 +390,11 @@ int main(int argc, const char * argv[])
                 // Send the data up to the manager
                 temp_pkt = encode_packet(pkt2->destination, key, DHT_SEND_DATA,
                                         pkt2->length, pkt2->data);
-                data_len = pkt2->length;
+                data_len = 0 + pkt2->length;
+                printf("Sending type and length: %d, %d\n", DHT_SEND_DATA, data_len);
                 putInt(ui_sock, DHT_SEND_DATA);
-                // putInt(ui_sock, data_len);
+                printf("size of data_len %d: %ld\n", data_len, sizeof(data_len));
+                putInt(ui_sock, data_len);
                 putBytes(ui_sock, pkt2->data, data_len);
                 free(temp_pkt);
               } else if ('a' <= first_char && first_char <= 'f') {

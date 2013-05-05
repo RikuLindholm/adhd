@@ -20,13 +20,15 @@ public class FileMessage {
 
     private File file;
     private String key;
-    private byte[] data;
+    private static final int HEADER_LEN = 44;
     private static final int FILE_GET = 21;
     private static final int FILE_PUT = 22;
     private static final int FILE_NOT_FOUND = 28;
     private static final Logger logger = Logger.getLogger("gui");
+    private static final CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+    private static final CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
 
-    public FileMessage(File file) {
+    public FileMessage(File file) throws {
         this.file = file;
         try {
             this.key = sha1(file.getName());
@@ -44,7 +46,7 @@ public class FileMessage {
     private String byteArrayToHexString(byte[] b) {
         String result = "";
         for (int i=0; i < b.length; i++) {
-          result += Integer.toString( ( b[i] & 0xff ) + 0x100, 16).substring( 1 );
+            result += Integer.toString( ( b[i] & 0xff ) + 0x100, 16).substring( 1 );
         }
         return result;
     }
@@ -52,27 +54,36 @@ public class FileMessage {
     /**
     * Read local file into memory
     */
-    private void readFile() throws IOException {
-        this.data = new byte[(int) this.file.length()];
-        DataInputStream stream = new DataInputStream(new FileInputStream(this.file));
-        stream.readFully(this.data);
-        stream.close();
+    private void writeFileToChannel(int fileLength) throws IOException {
+        FileChannel in = new FileInputStream(this.file).getChannel();
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        int written = 0;
+
+        while (written < fileLength) {
+            written += in.read(buffer);
+            buffer.flip();
+            Connection.write(buffer);
+            buffer.clear();
+        }
+
+        in.close();
     }
 
     /**
     * Write data block into a local file
     */
-    private void writeFile() throws IOException {
+    private void readFileFromChannel(int fileLength) throws IOException {
         FileChannel out = new FileOutputStream("response.txt").getChannel();
-        ByteBuffer buff2 = ByteBuffer.allocate(1024);
-        int retval = 1;
-        while (retval > 0) {
-            retval = Connection.read(buff2);
-            buff2.flip();
-            out.write(buff2);
-            buff2.clear();
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        int read = 1;
+
+        while (read < fileLength) {
+            read += Connection.read(buffer);
+            buffer.flip();
+            out.write(buffer);
+            buffer.clear();
         }
-        logger.log(Level.INFO, "Successfully saved response.txt");
+
         out.close();
     }
 
@@ -80,28 +91,24 @@ public class FileMessage {
     * Fetch single data block from DHT
     */
     public void fetch() throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(4 + 40).order(ByteOrder.LITTLE_ENDIAN);
-        Charset set = Charset.forName("UTF-8");
-        CharsetEncoder encoder = set.newEncoder();
-        CharsetDecoder decoder = set.newDecoder();
+        ByteBuffer header = ByteBuffer.allocate(HEADER_LEN).order(ByteOrder.LITTLE_ENDIAN);
 
-        buffer.putInt(FILE_GET);
-        buffer.put(encoder.encode(CharBuffer.wrap(this.key)));
+        header.putInt(FILE_GET);
+        header.put(encoder.encode(CharBuffer.wrap(this.key)));
+        header.flip();
+        Connection.write(header);
+
+        // Read response type
+        ByteBuffer buffer = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN);
+        read += Connection.read(buffer, 8);
         buffer.flip();
 
-        Connection.write(buffer);
-
-        ByteBuffer buff = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN);
-        int read = 0;
-        while (read < 4) {
-          read += Connection.read(buff);
-        }
-
-        buff.flip();
-        if (buff.getInt() == FILE_NOT_FOUND) {
+        int responseCode = buffer.getInt();
+        int fileLength = buffer.getInt();
+        if (responseCode == FILE_NOT_FOUND) {
             throw new FileNotFoundException("File could not be found in the DHT");
         } else {
-            writeFile();
+            readFileFromChannel(fileLength);
         }
     }
 
@@ -109,17 +116,14 @@ public class FileMessage {
     * Store a data block into DHT
     */
     public void save() throws IOException {
-        readFile();
-        ByteBuffer buffer = ByteBuffer.allocate(4 + 40 + 4 + (int)this.file.length()).order(ByteOrder.LITTLE_ENDIAN);
-        Charset set = Charset.forName("UTF-8");
-        CharsetEncoder encoder = set.newEncoder();
+        ByteBuffer header = ByteBuffer.allocate(HEADER_LEN + 4).order(ByteOrder.LITTLE_ENDIAN);
+        int fileLength = (int)this.file.length();
+        header.putInt(FILE_PUT);
+        header.put(encoder.encode(CharBuffer.wrap(this.key)));
+        header.putInt(fileLength);
+        header.flip();
+        Connection.write(header);
 
-        buffer.putInt(FILE_PUT);
-        buffer.put(encoder.encode(CharBuffer.wrap(this.key)));
-        buffer.putInt((int)this.file.length());
-        buffer.put(this.data);
-        buffer.flip();
-
-        Connection.write(buffer);
+        writeFileToChannel(fileLength);
     }
 }

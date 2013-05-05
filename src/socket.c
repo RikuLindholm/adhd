@@ -267,7 +267,7 @@ unsigned char *getBytes(int socket, int length) {
 }
 
 void putInt(int socket, int value) {
-  int size = sizeof(int);
+  int size = 4;
   int n = 0;
   while(n < size)
     n += send(socket, &value + n, size - n, 0);
@@ -284,5 +284,5 @@ void putBytes(int socket, unsigned char value[], int length) {
   int n = 0;
   while(n < length)
     n += send(socket, value + n, length - n, 0);
-  printf("Sent %d bytes", length);
+  printf("Sent %d bytes\n", length);
 }

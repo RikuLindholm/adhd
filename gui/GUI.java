@@ -153,14 +153,17 @@ public class Gui extends javax.swing.JFrame implements java.awt.event.WindowList
         if ((evt.getSource() == saveFileButton) && saveFileButton.isEnabled()) {
             int returnVal = fc.showOpenDialog(Gui.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
-              File file = fc.getSelectedFile();
-              FileMessage message = new FileMessage(file);
-              try {
-                message.save();
-                progressLabel.setText("Saved file " + file.getName() + " to the DHT");
-              } catch (IOException err) {
-                progressLabel.setText(err.getMessage());
-              }
+                File file = fc.getSelectedFile();
+                String fileName = file.getName();
+                FileMessage message = new FileMessage(file);
+                try {
+                    message.save();
+                    logger.log(Level.INFO, "Successfully stored " + fileName);
+                    progressLabel.setText("Saved file " + fileName + " to the DHT");
+                } catch (IOException err) {
+                    logger.log(Level.WARNING, "Error storing " + fileName, err);
+                    progressLabel.setText("Error storing " + fileName);
+                }
             }
         }
     }
@@ -185,8 +188,10 @@ public class Gui extends javax.swing.JFrame implements java.awt.event.WindowList
                 FileMessage message = new FileMessage(file);
                 try {
                     message.fetch();
-                    progressLabel.setText("Downloaded file " + fileName);
+                    logger.log(Level.INFO, "Successfully loaded " + fileName);
+                    progressLabel.setText("Successfully loaded " + fileName);
                 } catch (IOException err) {
+                    logger.log(Level.WARNING, err.getMessage(), err);
                     progressLabel.setText(err.getMessage());
                 }
             }

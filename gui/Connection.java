@@ -27,4 +27,11 @@ public class Connection {
   public static int read(ByteBuffer buffer) throws IOException {
     return sock.read(buffer);
   }
+ 
+    public static void read(ByteBuffer buffer, int length) throws IOException {
+        int read = 0;
+        while (read < length) {
+            read += sock.read(buffer);
+        }
+    }
 }
