@@ -226,15 +226,6 @@ int handshake_listener(int sock)
   return ret;
 }
 
-int get_int(int socket) {
-  int value;
-  int size = sizeof(int);
-  int n = 0;
-  while (n < size)
-    n += recv(socket, &value + n, size - n, 0);
-  return value;
-}
-
 char *get_sha1(int socket) {
   int size = 40;
   char *key = malloc(sizeof(char) * size);
@@ -252,11 +243,27 @@ unsigned char *get_bytes(int socket, int length) {
   return block;
 }
 
+int get_int(int socket) {
+  unsigned char *bytes = get_bytes(socket, 4);
+  // Convert little-endian to machine-endian
+  int value = ((bytes[3] & 0xff) << 24) | ((bytes[2] & 0xff) << 16)
+              | ((bytes[1] & 0xff) << 8) | (bytes[0] & 0xff);
+  free(bytes);
+  return value;
+}
+
 void put_int(int socket, int value) {
   int size = 4;
+  unsigned char *block = malloc(size);
+  // Convert machine-endian to little-endian
+  block[0] = value & 0xff;
+  block[1] = (value >> 8) & 0xff;
+  block[2] = (value >> 16) & 0xff;
+  block[3] = (value >> 24) & 0xff;
   int n = 0;
   while(n < size)
-    n += send(socket, &value + n, size - n, 0);
+    n += send(socket, block + n, size - n, 0);
+  free(block);
 }
 
 void put_sha1(int socket, char value[]) {
