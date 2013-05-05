@@ -28,7 +28,7 @@ public class FileMessage {
     private static final CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
     private static final CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
 
-    public FileMessage(File file) throws {
+    public FileMessage(File file) {
         this.file = file;
         try {
             this.key = sha1(file.getName());
@@ -98,12 +98,12 @@ public class FileMessage {
         header.flip();
         Connection.write(header);
 
-        // Read response type
+        // Read response code
         ByteBuffer buffer = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN);
         Connection.read(buffer);
         buffer.flip();
 
-        if (responseCode == buffer.getInt()) {
+        if (buffer.getInt() == FILE_NOT_FOUND) {
             throw new FileNotFoundException("File could not be found in the DHT");
         } else {
             // Read file length

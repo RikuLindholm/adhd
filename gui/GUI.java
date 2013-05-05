@@ -158,7 +158,7 @@ public class Gui extends javax.swing.JFrame implements java.awt.event.WindowList
                 FileMessage message = new FileMessage(file);
                 try {
                     message.save();
-                    logger.log(Level.INFO, "Successfully stored " + fileName);
+                    logger.info("Successfully stored " + fileName);
                     progressLabel.setText("Saved file " + fileName + " to the DHT");
                 } catch (IOException err) {
                     logger.log(Level.WARNING, "Error storing " + fileName, err);
@@ -188,10 +188,10 @@ public class Gui extends javax.swing.JFrame implements java.awt.event.WindowList
                 FileMessage message = new FileMessage(file);
                 try {
                     message.fetch();
-                    logger.log(Level.INFO, "Successfully loaded " + fileName);
+                    logger.info("Successfully loaded " + fileName);
                     progressLabel.setText("Successfully loaded " + fileName);
                 } catch (IOException err) {
-                    logger.log(Level.WARNING, err.getMessage(), err);
+                    logger.warning(err.getMessage());
                     progressLabel.setText(err.getMessage());
                 }
             }
