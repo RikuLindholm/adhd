@@ -7,11 +7,10 @@ import java.nio.channels.SocketChannel;
 public class Connection {
 
   private static SocketChannel sock;
-  private static String host = "127.0.0.1";
 
   public static void connect(int port) throws IOException {
     sock = SocketChannel.open();
-    sock.connect(new InetSocketAddress(host, port));
+    sock.connect(new InetSocketAddress("127.0.0.1", port));
     sock.finishConnect();
   }
 

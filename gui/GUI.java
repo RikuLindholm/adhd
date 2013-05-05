@@ -26,7 +26,7 @@ public class Gui extends javax.swing.JFrame implements java.awt.event.WindowList
     private javax.swing.JLabel progressLabel;
     private javax.swing.JScrollPane progressPane;
     private javax.swing.JLabel raportLabel;
-    private static final Logger logger = Logger.getLogger(Gui.class.getName());
+    private static final Logger logger = Logger.getLogger("gui");
 
     /**
     * Creates new form Client_GUI and centers it to the screen
